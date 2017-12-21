@@ -123,7 +123,7 @@ subroutine loadStructure_vtk(filename)
         bmat(2)=int(b+0.5)
         bmat(3)=int(c+0.5)
         do i=1,tnode/2-2
-            ! 2 values on next lines\
+            ! 2 values on next lines
             read(fi,*) a,b
             bmat(2*i)=int(a+0.5)
             bmat(2*i+1)=int(b+0.5)
@@ -135,7 +135,7 @@ subroutine loadStructure_vtk(filename)
         do i=1,dimz
             do j=1,dimy
                 do k=1,dimx
-                    sfiel(i,j,k)=bmat(l)
+                    sfiel(i,j,k)=abs(bmat(l)-1)
                     l=l+1
                 enddo
             enddo
@@ -490,7 +490,7 @@ subroutine heatFlux_oc_ss
     enddo
     effc_num=xxx/dimz
     filename='../results/Temp.vtk'
-    ! call save3DField_vtk(filename,tfiel)
+    call save3DField_vtk(filename,tfiel)
     deallocate(chfz,tfiel,tvec,cfiel,sfiel,dx,dy,dz)
 end subroutine heatFlux_oc_ss
 !***********************************END****************************************
