@@ -201,6 +201,12 @@ size_t X_O2_Pos;
 /// @param[in] size_t X_N2_Pos
 /// @brief memory allocation for the partial pressure of N2 as the input of thermal conductivity surrogate model
 size_t X_N2_Pos;
+/// @param[in] size_t X_Opt_Pos
+/// @brief memory allocation for the partial pressure of Opteon as the input of thermal conductivity surrogate model
+size_t X_Opt_Pos;
+/// @param[in] size_t X_N2_Pos
+/// @brief memory allocation for the partial pressure of Solstice as the input of thermal conductivity surrogate model
+size_t X_Sol_Pos;
 /// @param[in] size_t strut_content_Pos
 /// @brief memory allocation for the strut content as the input of thermal conductivity surrogate model
 size_t strut_content_Pos;

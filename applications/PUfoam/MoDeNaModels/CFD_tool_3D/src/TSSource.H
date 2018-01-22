@@ -205,6 +205,9 @@ forAll(mesh.C(), celli)
             modena_inputs_set(inputs_thermalConductivity, X_CO2_Pos, (pp_CO2/(pp_BA+pp_CO2)));
             modena_inputs_set(inputs_thermalConductivity, X_O2_Pos, 0.0);
             modena_inputs_set(inputs_thermalConductivity, X_N2_Pos, 0.0);
+            // TODO: implement Solstice and Opteon properly
+            modena_inputs_set(inputs_thermalConductivity, X_Sol_Pos, 0.0);
+            modena_inputs_set(inputs_thermalConductivity, X_Opt_Pos, 0.0);
             modena_inputs_set(inputs_thermalConductivity, X_Cyp_Pos, (pp_BA/(pp_BA+pp_CO2)));
             // input for strut content
             modena_inputs_set(inputs_strutContent, rho_foam_Pos, rhoFO);

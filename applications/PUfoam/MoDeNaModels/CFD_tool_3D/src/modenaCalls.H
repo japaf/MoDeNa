@@ -160,6 +160,8 @@ X_CO2_Pos = modena_model_inputs_argPos(thermalConductivitymodel, "x[CO2]");
 X_O2_Pos = modena_model_inputs_argPos(thermalConductivitymodel, "x[O2]");
 X_N2_Pos = modena_model_inputs_argPos(thermalConductivitymodel, "x[N2]");
 X_Cyp_Pos = modena_model_inputs_argPos(thermalConductivitymodel, "x[CyP]");
+X_Opt_Pos = modena_model_inputs_argPos(thermalConductivitymodel, "x[Opt]");
+X_Sol_Pos = modena_model_inputs_argPos(thermalConductivitymodel, "x[Sol]");
 modena_model_argPos_check(thermalConductivitymodel);
 
 // temp_rheopos = modena_model_inputs_argPos(rheologymodel, "T");
