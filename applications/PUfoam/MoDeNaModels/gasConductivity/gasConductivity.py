@@ -126,26 +126,26 @@ if 'CyP' in species.names:
 
 ## Surrogate model for thermal conductivity of blowing agent
 #
-# Forward mapping model is used. Cyclopentane temeprature dependence used.
+# Forward mapping model is used.
 # Fitted to data from product sheet.
 m_Opt_thermal_conductivity = ForwardMappingModel(
     _id='gas_thermal_conductivity[A=Opt]',
     surrogateFunction=f_gas_thermal_conductivity,
     substituteModels=[],
-    parameters=[0.0956e-3, -0.0177888],
+    parameters=[7.07766931e-05, -1.03618316e-02],
 )
 if 'Opt' in species.names:
     substituteModels.append(m_Opt_thermal_conductivity)
 
 ## Surrogate model for thermal conductivity of blowing agent
 #
-# Forward mapping model is used.  Cyclopentane temeprature dependence used.
+# Forward mapping model is used.  Opteon temperature dependence used.
 # Fitted to data from product sheet.
 m_Sol_thermal_conductivity = ForwardMappingModel(
     _id='gas_thermal_conductivity[A=Sol]',
     surrogateFunction=f_gas_thermal_conductivity,
     substituteModels=[],
-    parameters=[0.0956e-3, -0.0178108],
+    parameters=[7.07766931e-05, -0.0105375710887],
 )
 if 'Sol' in species.names:
     substituteModels.append(m_Sol_thermal_conductivity)
