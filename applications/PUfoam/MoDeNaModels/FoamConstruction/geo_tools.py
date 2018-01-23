@@ -8,7 +8,6 @@ import shutil
 import subprocess as sp
 import numpy as np
 from blessings import Terminal
-from docopt import docopt
 NAMES = {
     'point': 'Point',
     'line': 'Line',
