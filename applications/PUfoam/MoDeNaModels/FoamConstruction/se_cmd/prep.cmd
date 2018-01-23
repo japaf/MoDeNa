@@ -6,9 +6,7 @@ Use:
     gogo
     dmpgeo
 */
-prep:={
-    read "foamface.cmd";
-    read "distribution.cmd"
-    read "fe2geo.cmd"
-    read "relaxNE4.cmd"
-}
+read "foamface.cmd";
+read "distribution.cmd";
+read "fe2geo.cmd";
+read "relaxNE4.cmd";
