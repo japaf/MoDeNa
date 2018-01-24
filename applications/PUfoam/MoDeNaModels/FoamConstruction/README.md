@@ -7,7 +7,7 @@ Foam Construction
 This module contains an utility, which can create a spatially three-dimensional image of foam morphology with desired foam density, cell size distribution and strut content. This module does not contain any MoDeNa model.
 
 ## Installation
-The code depends on several third-party applications. They are listed in @ref dep_foamConstruction. 
+The code depends on several third-party applications. They are listed in @ref dep_foamConstruction.
 
 To install all of these on Ubuntu, do:
 ```
@@ -65,6 +65,16 @@ sudo ./install_voro++.sh
 If that doesn't work, you will need to download it from
 http://math.lbl.gov/voro++/download/ and install it manually.
 
+Install `se_api` from https://github.com/japaf/SE_api
+```
+cd to-source-files
+cmake .
+make
+sudo cp se_api /usr/local/bin/se_api
+```
+
+Install Evolver from http://facstaff.susqu.edu/brakke/evolver/evolver.html and put it on `$PATH`.
+
 To compile `foamreconstr` go to `foamreconstr/` folder and:
 ```
 cmake .
@@ -87,29 +97,29 @@ All files must be in one directory.
 The code is controlled by the `input.json` file, which must be located in the
 root of `FoamConstruction` folder. Default input file can be found
 in `example_inputs` directory. Following inputs can be adjusted:
-- `filename`: base name of created files 
-- `packing`: create sphere packing [true, false], 
-- `packing_options`: 
-    - `shape`: shape of log-normal distribution, 
-    - `domain_size`: domain size (1 is recommended), 
-    - `number_of_cells`: number of cells, 
-    - `scale`: scale of log-normal distribution, 
+- `filename`: base name of created files
+- `packing`: create sphere packing [true, false],
+- `packing_options`:
+    - `shape`: shape of log-normal distribution,
+    - `domain_size`: domain size (1 is recommended),
+    - `number_of_cells`: number of cells,
+    - `scale`: scale of log-normal distribution,
     - `algorithm`: type of sphere packing algorithm [`simple`, `-ls`, `-fba`, `-lsgd`, `-lsebc`, `-ojt`, `-kjt`], `simple` algorithm is included, others are enabled by packing-generation (see https://github.com/VasiliBaranov/packing-generation), `-fba` is recommended
-- `tessellation`: create tessellated foam [true, false], 
-- `tessellation_options`: 
+- `tessellation`: create tessellated foam [true, false],
+- `tessellation_options`:
     - `visualize_tessellation`: visualize tessellation [true, false], false is recommended
 - `structured_grid`: create structured (voxel) mesh [true, false],
-- `structured_grid_options`: 
-    - `render_box`: visualize foam [true, false], false is recommended 
-    - `strut_content`: strut content, 
-    - `porosity`: foam porosity, 
+- `structured_grid_options`:
+    - `render_box`: visualize foam [true, false], false is recommended
+    - `strut_content`: strut content,
+    - `porosity`: foam porosity,
     - `strut_size_guess`: strut size in voxels, guess usually 4-8
     - `binarize_box`: run part of the script, which creates voxel mesh, [true, false], true is recommended
     - `move_to_periodic_box`: run part of the script, which moves foam to periodic box, [true, false], true is recommended
-- `unstructured_grid`: create unstructured (tetrahedral) mesh [true, false], 
-- `unstructured_grid_options`: 
-    - `create_geometry`: run part of the script, which creates foam, [true, false], true is recommended, 
-    - `convert_mesh`: run part of the script, which converts mesh to .xml, [true, false], true is recommended, 
+- `unstructured_grid`: create unstructured (tetrahedral) mesh [true, false],
+- `unstructured_grid_options`:
+    - `create_geometry`: run part of the script, which creates foam, [true, false], true is recommended,
+    - `convert_mesh`: run part of the script, which converts mesh to .xml, [true, false], true is recommended,
     - `wall_thickness`: wall thickness parameter, 0.02 is good guess
     - `mesh_domain`: run part of the script, which creates mesh, [true, false], true is recommended
 
