@@ -28,6 +28,7 @@ from docopt import docopt
 from scipy.optimize import minimize_scalar as minimize_scalar
 import packing
 import tessellation
+import relaxation
 import periodicBox
 import vtkconv
 import geo_tools
@@ -333,6 +334,13 @@ def main():
             INPUTS["filename"],
             INPUTS["packing_options"]["number_of_cells"],
             INPUTS["tessellation_options"]["visualize_tessellation"])
+    if INPUTS["relaxation"]:
+        print(
+            TERM.yellow +
+            "Relaxing foam structure." +
+            TERM.normal
+        )
+        relaxation.relax(INPUTS["filename"])
     if INPUTS["structured_grid"]:
         print(
             TERM.yellow +

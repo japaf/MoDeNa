@@ -18,6 +18,8 @@ from blessings import Terminal
 from docopt import docopt
 from scipy import optimize
 from scipy.constants import gas_constant
+import matplotlib.pyplot as plt
+
 XMIN = 0.0
 XMAX = 1.0
 YMIN = 0.0
@@ -40,12 +42,14 @@ def main():
     if INPUTS['saving']['mesh']:
         fe.File(fname + "_mesh.pvd") << mesh
     if INPUTS['plotting']['mesh']:
+        plt.figure()
         fe.plot(mesh, title='Mesh')
     subdomains = fe.MeshFunction(
         'size_t', mesh, fname + '_physical_region.xml')
     if INPUTS['saving']['subdomains']:
         fe.File(fname + "_subdomains.pvd") << subdomains
     if INPUTS['plotting']['subdomains']:
+        plt.figure()
         fe.plot(subdomains, title='Subdomains')
     # function space for temperature/concentration
     func_space = fe.FunctionSpace(
@@ -188,17 +192,23 @@ def main():
         fe.File(fname + "_flux_z.pvd") << flux_z
     # plot results
     if INPUTS['plotting']['solution']:
+        plt.figure()
         fe.plot(field, title="Solution")
     if INPUTS['plotting']['flux']:
+        plt.figure()
         fe.plot(flux, title="Flux")
     if INPUTS['plotting']['flux_divergence']:
+        plt.figure()
         fe.plot(divergence, title="Divergence")
     if INPUTS['plotting']['flux_components']:
+        plt.figure()
         fe.plot(flux_x, title='x-component of flux (-kappa*grad(u))')
+        plt.figure()
         fe.plot(flux_y, title='y-component of flux (-kappa*grad(u))')
+        plt.figure()
         fe.plot(flux_z, title='z-component of flux (-kappa*grad(u))')
     if True in INPUTS['plotting'].values():
-        fe.interactive()
+        plt.show()
     print(
         term.yellow
         + "End."
