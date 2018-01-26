@@ -319,14 +319,17 @@ def remove_duplicity(edat, eps=1e-10):
     """
     # points
     dupl = identify_duplicity(edat, 'point', 'float', eps)
+    print('Removing {} duplicit points.'.format(len(dupl)))
     remove_duplicit_ids_from_keys(edat, dupl, 'point')
     remove_duplicit_ids_from_values(edat, dupl, 'line')
     # lines
     dupl = identify_duplicity(edat, 'line', 'integer', eps)
+    print('Removing {} duplicit lines.'.format(len(dupl)))
     remove_duplicit_ids_from_keys(edat, dupl, 'line')
     remove_duplicit_ids_from_values(edat, dupl, 'line_loop')
     # line loops
     dupl = identify_duplicity(edat, 'line_loop', 'integer', eps)
+    print('Removing {} duplicit line loops.'.format(len(dupl)))
     remove_duplicit_ids_from_keys(edat, dupl, 'line_loop')
     remove_duplicit_ids_from_keys(edat, dupl, 'surface')
     remove_duplicit_ids_from_values(edat, dupl, 'surface_loop')
@@ -338,7 +341,7 @@ def split_loops(edat, key):
     Makes sure that line and surface loops contain only one loop. Surfaces and
     volumes with holes are instead defined in Surface and Volume entries,
     respectively. Needed because gmsh unrolls geometry in a way, which is
-    unusable with OpenCASCADE kernel.
+    unusable with OpenCASCADE kernel. Works when there is only one hole.
     """
     if key == 'line_loop':
         key2 = 'surface'
@@ -575,7 +578,7 @@ def main(fname, wall_thickness, verbose):
     """
     Main subroutine. Organizes workflow.
 
-    File.geo -> FileFixed.geo -> FileBox.geo -> FileBoxFixed.geo
+    File.geo -> FileWalls.geo -> FileWallsBox.geo -> FileWallsBoxFixed.geo
     """
     term = Terminal()
     print(

@@ -1,14 +1,19 @@
 #!/usr/bin/env python
 """Python script, which organizes creation of the foam.
 
-@file       run.py @namespace  FoamConstruction.run @ingroup
-mod_foamConstruction @author     Pavel Ferkl @copyright  2014-2016, MoDeNa
-Project. GNU Public License. @details
+@file       run.py
+@namespace  FoamConstruction.run
+@ingroup    mod_foamConstruction
+@author     Pavel Ferkl
+@copyright  2014-2016, MoDeNa Project. GNU Public License.
+@details
+Reconstruction proceeds in several steps. First, close packing of spheres is
+created. Second, weighted Voronoi tessellation is used to create cells. Third,
+foam is annealed to obtained relaxed foam structure. Finally, structured or
+unstructured mesh containing walls and struts is created.
 
-First, the geometric tessellation is performed so that the resulting foam has the
-correct bubble size distribution. Then several mesh conversions are made to obtain
-the foam image in desired format. Finally, foam is voxelized to desired foam
-density and struts are optionally added.
+If relaxation is used, use gmsh 3.0.6 or greater. Procedure sometimes failes
+with gmsh 3.0.4.
 
 Usage: simulation.py [-h | --help] [-i input_file] [--verbose]
 
