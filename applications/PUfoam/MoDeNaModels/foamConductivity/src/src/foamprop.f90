@@ -30,7 +30,7 @@ contains
 subroutine effrad(spectra)
     use quadpack
     character(len=*), intent(in) :: spectra !< filename of specral results
-    integer :: i,j,fi,nwawel=100
+    integer :: i,j,fi,nwawel=50
 !    real(dp) :: theta  !incident angle
 !    real(dp) :: Rwin    !reflectance
 !    real(dp) :: Twin    !transmittance

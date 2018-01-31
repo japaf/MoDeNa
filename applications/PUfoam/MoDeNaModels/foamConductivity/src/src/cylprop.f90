@@ -26,7 +26,7 @@ subroutine cylconst(lambda,theta,radius,Qs,Qt,gcyl)
     real(dp), intent(out) :: Qt    !< efficiency factor of extinction
     real(dp), intent(out) :: gcyl   !< anisotropy factor
     integer :: &
-        i,k,kmax,nwaw=1001
+        i,k,kmax,nwaw=51
     real(dp) :: &
         x,&   !diffraction parameter
         tol=1e-10_dp,&   !tolerance for calculation of Bessel functions

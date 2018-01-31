@@ -24,16 +24,16 @@
         "Opt": 0.0,
         "Sol": 0.0
     },
-    "porosity": 0.939,
-    "cellSize": 8.06e-04,
-    "strutContent": 8e-01,
+    "porosity": 0.94,
+    "cellSize": 3.06e-04,
+    "strutContent": 0.8,
     "wallThickness": 0.5e-6,
     "morphologyInput": "strutContent",
     "strutSize": 1e-6,
     "foamThickness": 3e-2,
     "spectra": {
-        "polymer_n": "spec_n_ps_kaemmerlen2010.csv",
-        "polymer_k": "spec_k_ps_kaemmerlen2010.csv",
+        "polymer_n": "spec_n_pu_dombrovsky2010.csv",
+        "polymer_k": "spec_k_pu_basf.csv",
         "gas_k": "spec_k_gas.csv"
     },
     "spatialDiscretization": 200,
