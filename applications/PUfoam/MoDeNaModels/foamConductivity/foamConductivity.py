@@ -54,13 +54,16 @@ results and stores them in the database.
 
 """
 
-import os
 import json
+import os
+
 from fireworks.utilities.fw_utilities import explicit_serialize
-from modena import CFunction, BackwardMappingModel, ModenaFireTask, Strategy
-import polymerConductivity
+from modena import BackwardMappingModel, CFunction, ModenaFireTask, Strategy
+
 import gasConductivity
 import gasMixtureConductivity
+import polymerConductivity
+
 ## adjust precision of floats when saving json files
 json.encoder.FLOAT_REPR = lambda o: format(o, '.12g')
 
@@ -92,56 +95,57 @@ class FoamConductivityExactTask(ModenaFireTask):
         temp = self['point']['T']
         names = gasConductivity.species.names
         # Write input
-        inputs={"upperBoundary": {"temperature": temp+1,"emittance": 0.9}}
-        inputs["lowerBoundary"]={"temperature": temp-1,"emittance": 0.9}
+        inputs = {"upperBoundary": {"temperature": temp + 1, "emittance": 0.9}}
+        inputs["lowerBoundary"] = {"temperature": temp - 1, "emittance": 0.9}
         inputs["gasComposition"] = dict()
         for name in names:
             inputs["gasComposition"][name] = self['point']['x[{}]'.format(name)]
-        inputs["gasDensity"]=1.2
-        inputs["solidDensity"]=1.1e3
-        inputs["sourceOfProperty"]={
+        inputs["gasDensity"] = 1.2
+        inputs["solidDensity"] = 1.1e3
+        inputs["sourceOfProperty"] = {
             "porosity": "DirectInput",
             "cellSize": "DirectInput",
             "gasComposition": "DirectInput",
             "strutContent": "DirectInput",
             "wallThickness": "DirectInput"
         }
-        inputs["porosity"]=eps
-        inputs["cellSize"]=dcell
-        inputs["morphologyInput"]="strutContent"
-        inputs["wallThickness"]=0.5e-6
-        inputs["strutContent"]=fstrut
-        inputs["strutSize"]=1e-6
-        inputs["foamThickness"]=3e-2
-        inputs["spectra"]={
+        inputs["porosity"] = eps
+        inputs["cellSize"] = dcell
+        inputs["morphologyInput"] = "strutContent"
+        inputs["wallThickness"] = 0.5e-6
+        inputs["strutContent"] = fstrut
+        inputs["strutSize"] = 1e-6
+        inputs["foamThickness"] = 3e-2
+        inputs["spectra"] = {
             "polymer_n": "spec_n_pu_dombrovsky2010.csv",
             "polymer_k": "spec_k_pu_basf.csv",
             "gas_k": "spec_k_gas.csv"
         }
-        inputs["spatialDiscretization"]=200
-        inputs["useWallThicknessDistribution"]=True
-        inputs["wallThicknessStandardDeviation"]=0.2
-        inputs["numberOfGrayBoxes"]=10
-        inputs["numericalEffectiveConductivity"]=False
+        inputs["spatialDiscretization"] = 200
+        inputs["useWallThicknessDistribution"] = True
+        inputs["wallThicknessStandardDeviation"] = 0.2
+        inputs["numberOfGrayBoxes"] = 10
+        inputs["numericalEffectiveConductivity"] = False
         # inputs["structureName"]=
-        inputs["testMode"]=False
-        with open('foamConductivity.json','w') as f:
-            json.dump(inputs, f, indent=4)
+        inputs["radiationModel"] = "complex"
+        with open('foamConductivity.json', 'w') as jsonf:
+            json.dump(inputs, jsonf, indent=4)
         os.mkdir('inputs')
-        os.rename('foamConductivity.json','inputs/foamConductivity.json')
+        os.rename('foamConductivity.json', 'inputs/foamConductivity.json')
         # Execute the detailed model
         # path to **this** file + /src/...
         # will break if distributed computing
-        ret = os.system(os.path.dirname(os.path.abspath(__file__))+'/src/kfoam')
+        ret = os.system(os.path.dirname(
+            os.path.abspath(__file__)) + '/src/kfoam')
         # This call enables backward mapping capabilities
         self.handleReturnCode(ret)
         # Analyse output
         # os.getcwd() returns the path to the "launcher" directory
         try:
-            FILE = open(os.getcwd()+'/foamConductivity.out','r')
+            outputf = open(os.getcwd() + '/foamConductivity.out', 'r')
         except IOError:
             raise IOError("File not found")
-        self['point']['kfoam'] = float(FILE.readline())
+        self['point']['kfoam'] = float(outputf.readline())
 
 ## Surrogate function for thermal conductivity of the foam.
 #
@@ -201,12 +205,12 @@ void tcfoam_SM
     },
 )
 
-try: #initialization by initModels
+try:  # initialization by initModels
     with open("./inputs/init_foamConductivity.json") as fl:
-        foaming_ini=json.load(fl)
-except IOError: #automatic initialization
+        foaming_ini = json.load(fl)
+except IOError:  # automatic initialization
     with open("../inputs/init_foamConductivity.json") as fl:
-        foaming_ini=json.load(fl)
+        foaming_ini = json.load(fl)
 
 ## Surrogate model for foam conductivity.
 #
@@ -241,8 +245,8 @@ m_foamConductivity = BackwardMappingModel(
 # Runs the detailed model and saves the results.
 # For the case, when only foam conductivity and no aging is needed.
 m_simulation = Strategy.BackwardMappingScriptTask(
-    script=os.path.dirname(os.path.abspath(__file__))+'/src/kfoam'
-        + ' && cp foamConductivity.out ../results/foamConductivity'
-        + ' && cp hahtf.out ../results/foamConductivity'
-        + ' && rsync --ignore-missing-args *.csv ../results/foamConductivity/'
+    script=os.path.dirname(os.path.abspath(__file__)) + '/src/kfoam'
+    + ' && cp foamConductivity.out ../results/foamConductivity'
+    + ' && cp hahtf.out ../results/foamConductivity'
+    + ' && rsync --ignore-missing-args *.csv ../results/foamConductivity/'
 )

@@ -42,5 +42,5 @@
     "numberOfGrayBoxes": 10,
     "numericalEffectiveConductivity": false,
     "structureName": "PeriodicRVEBox-ascii.vtk",
-    "testMode": false
+    "radiationModel": "complex"
 }

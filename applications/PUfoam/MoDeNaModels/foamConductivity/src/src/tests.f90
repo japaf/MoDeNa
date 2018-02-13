@@ -34,31 +34,35 @@ subroutine eqcond(regions)
     real(dp), dimension(:,:), allocatable :: regalpha,regsigma
     allocate(regbound(regions+1),regcond(regions),regalpha(regions,nbox),&
         regsigma(regions,nbox),alpha(nz,nbox),sigma(nz,nbox),cond(nz))
+    if (radiationModel == "none") then
+        write(*,*) 'Radiation is neglected.'
+        write(mfi,*) 'Radiation is neglected.'
+        krad=0.0_dp
+        call effcond
+        open(newunit(fi),file='foamConductivity.out')
+        write(fi,*) eqc_ross
+        close(fi)
+        return
+    elseif (radiationModel == "simple") then
+        write(*,*) 'Using simple radiation model.'
+        write(mfi,*) 'Using simple radiation model.'
+        krad = 16*sigmaB*tmean**3*dcell/(3*4.09_dp*sqrt(1-por))
+        call effcond
+        open(newunit(fi),file='foamConductivity.out')
+        write(fi,*) eqc_ross
+        close(fi)
+        return
+    elseif (radiationModel == "complex") then
+        write(*,*) 'Using complex radiation model.'
+        write(mfi,*) 'Using complex radiation model.'
+    else
+        stop 'Unknown radiation model.'
+    endif
     do i=1,regions+1
         regbound(i)=(i-1)*dfoam/regions
     enddo
     do i=1,regions
-        if (por < 0.8_dp) then
-            write(*,*) 'Radiative prop. not calculated for porosity < 0.8'
-            write(mfi,*) 'Radiative prop. not calculated for porosity < 0.8'
-            krad=2e-3_dp
-            call effcond
-            open(newunit(fi),file='foamConductivity.out')
-            write(fi,*) eqc_ross
-            close(fi)
-            return
-        endif
         call foam_morpholgy
-        if (testMode) then
-            write(*,*) 'TESTING: radiative properties not calculated.'
-            write(*,*) 'Disable test mode if you want more reasonable results.'
-            krad=2e-3_dp
-            call effcond
-            open(newunit(fi),file='foamConductivity.out')
-            write(fi,*) eqc_ross
-            close(fi)
-            return
-        endif
         call effrad(spectra)
         call effcond
         regcond(i)=effc
@@ -356,7 +360,8 @@ subroutine loadParameters
     if (numcond) then
         call fson_get(json_data, "structureName", structureName)
     endif
-    call fson_get(json_data, "testMode", testMode)
+    call fson_get(json_data, "radiationModel", radiationModel)
+    radiationModel = TRIM(ADJUSTL(radiationModel))
     if (temp1<temp2) then
         tmean=temp1
         temp1=temp2

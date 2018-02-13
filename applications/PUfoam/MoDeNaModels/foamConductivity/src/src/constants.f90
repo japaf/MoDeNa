@@ -25,9 +25,9 @@ module constants
     complex(dp), parameter :: iu=(0.0e0_dp,1.0e0_dp)       !<imaginary constant
     logical  :: &
         wdist,&               !<use wall thickness distribution
-        testMode,&            !<true disables calculation of radiation
         numcond               !<calcualte effective conductivity numerically
     character(len=80) :: &
+        radiationModel,&      !<selects radiation model
         structureName         !<name of the file with morphology
     integer  :: &
         mfi,&                 !<main file index
