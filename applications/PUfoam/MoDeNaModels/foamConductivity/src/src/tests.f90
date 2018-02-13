@@ -32,43 +32,56 @@ subroutine eqcond(regions)
     integer :: i,j,fi
     real(dp), dimension(:), allocatable :: regbound,regcond
     real(dp), dimension(:,:), allocatable :: regalpha,regsigma
-    allocate(regbound(regions+1),regcond(regions),regalpha(regions,nbox),&
-        regsigma(regions,nbox),alpha(nz,nbox),sigma(nz,nbox),cond(nz))
     if (radiationModel == "none") then
         write(*,*) 'Radiation is neglected.'
         write(mfi,*) 'Radiation is neglected.'
-        krad=0.0_dp
-        call effcond
-        open(newunit(fi),file='foamConductivity.out')
-        write(fi,*) eqc_ross
-        close(fi)
-        return
+        nbox=1
+        allocate(fbepbox(1))
+        fbepbox=1
+        effn=0 ! causes solution of incident radiation in conduction-radiation
+        ! calculation to be 0, thus radiative heat flux will be also 0.
     elseif (radiationModel == "simple") then
         write(*,*) 'Using simple radiation model.'
         write(mfi,*) 'Using simple radiation model.'
-        krad = 16*sigmaB*tmean**3*dcell/(3*4.09_dp*sqrt(1-por))
-        call effcond
-        open(newunit(fi),file='foamConductivity.out')
-        write(fi,*) eqc_ross
-        close(fi)
-        return
+        nbox=1
+        allocate(fbepbox(1))
+        fbepbox=1
+        effn=por*n1+(1-por)*unin !this is not perfect, use of some average value
+        ! of n2 instead of unin would be better
     elseif (radiationModel == "complex") then
         write(*,*) 'Using complex radiation model.'
         write(mfi,*) 'Using complex radiation model.'
     else
         stop 'Unknown radiation model.'
     endif
+    allocate(regbound(regions+1),regcond(regions),regalpha(regions,nbox),&
+        regsigma(regions,nbox),alpha(nz,nbox),sigma(nz,nbox),cond(nz))
     do i=1,regions+1
         regbound(i)=(i-1)*dfoam/regions
     enddo
     do i=1,regions
-        call foam_morpholgy
-        call effrad(spectra)
-        call effcond
-        regcond(i)=effc
-        regalpha(i,:)=abscoeffbox
-        regsigma(i,:)=scattcoeffbox
-        deallocate(abscoeffbox,scattcoeffbox)
+        if (radiationModel == "none") then
+            krad=0.0_dp
+            call effcond
+            regcond(i)=effc
+            regalpha(i,:)=1
+            regsigma(i,:)=0
+        elseif (radiationModel == "simple") then
+            call effcond
+            regcond(i)=effc
+            regalpha(i,:)=4.09_dp*sqrt(1-por)/dcell
+            regsigma(i,:)=0
+        elseif (radiationModel == "complex") then
+            call foam_morpholgy
+            call effrad(spectra)
+            call effcond
+            regcond(i)=effc
+            regalpha(i,:)=abscoeffbox
+            regsigma(i,:)=scattcoeffbox
+            deallocate(abscoeffbox,scattcoeffbox)
+        else
+            stop 'Unknown radiation model.'
+        endif
     enddo
     do i=1,nz
         do j=1,regions+1

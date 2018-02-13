@@ -22,6 +22,7 @@ module constants
         struttol=1e-3_dp                !<tolerance for strut content
                                         !<foam has no struts if fs<struttol
                                         !<foam has no walls if fs>1-struttol
+        real(dp) :: unin=1.57_dp        !<average index of refraction
     complex(dp), parameter :: iu=(0.0e0_dp,1.0e0_dp)       !<imaginary constant
     logical  :: &
         wdist,&               !<use wall thickness distribution

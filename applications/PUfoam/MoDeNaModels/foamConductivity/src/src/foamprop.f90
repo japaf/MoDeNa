@@ -13,7 +13,6 @@ module foamprop
     implicit none
     private
     public effrad,fbep
-    real(dp) :: unin=1.57_dp
     real(dp), dimension(:), allocatable :: &
         lambdaf,&
         !foam radiative properties - wall contribution
@@ -31,14 +30,6 @@ subroutine effrad(spectra)
     use quadpack
     character(len=*), intent(in) :: spectra !< filename of specral results
     integer :: i,j,fi,nwawel=50
-!    real(dp) :: theta  !incident angle
-!    real(dp) :: Rwin    !reflectance
-!    real(dp) :: Twin    !transmittance
-!    real(dp) :: Awin    !absorptance
-!    real(dp) :: rn    !random number
-!    real(dp) :: absp    !absorption parameter
-!    real(dp) :: scap    !scattering parameter
-!    real(dp) :: npart    !number of particlesper unit volume
     real(dp) :: dwmin,dwmax,lambdamin,lambdamax
     !qags variables
     real(dp) :: a !start point of integration
@@ -52,45 +43,6 @@ subroutine effrad(spectra)
     !end of qags variables
     write(*,*) 'Radiative properties of the foam:'
     write(mfi,*) 'Radiative properties of the foam:'
-!    call cylconst(2*pi,pi/4,1.0e-1_dp,Qs,Qt,mu)
-!    stop
-    !monte carlo method, does not work properly
-!    swin=dcell**2
-!    absp=0
-!    scap=0
-!    npart=3/dcell**3
-!    lambda=10e-6
-!    call srand(int(abs(sin(dble(time()))*1e6)))
-!    do i=1,nrays
-!        theta=acos(rand())
-!!        theta=rand()*pi/2
-!        call filmconst(lambda,theta,dwall,Rwin,Twin,Awin)
-!        absp=absp+Swin*Awin
-!        scap=scap+Swin*Rwin
-!!        absp=absp+cos(theta)*sin(theta)*Swin*Awin*pi/2
-!!        scap=scap+cos(theta)*sin(theta)*Swin*Rwin*pi/2
-!!        rn=rand()
-!!        if (rn>1-Awin) then
-!!            absp=absp+Swin
-!!        elseif(rn<Rwin) then
-!!            scap=scap+Swin
-!!        endif
-!    enddo
-!    kappaf=npart*absp/nrays
-!    sigmaf=npart*scap/nrays
-!    betaf=kappaf+sigmaf
-!    omegaf=sigmaf/betaf
-!    write(*,*) kappaf
-!    write(*,*) sigmaf
-!    write(*,*) betaf
-!    write(*,*) omegaf
-!    a=0
-!    b=pi/2
-!    call qags ( reflectance, a, b, epsabs, epsrel, res, abserr, neval, ier )
-!    write(*,*)
-!    write(*,*) sigmaf
-!    sigmaf=3*res/dcell
-!    write(*,*) sigmaf
 
     allocate(lambdaf(nwawel),kappafwall(nwawel),sigmafwall(nwawel),&
         betafwall(nwawel),omegafwall(nwawel),betatrfwall(nwawel),&
@@ -102,7 +54,6 @@ subroutine effrad(spectra)
     lambdamax=lambdan(size(lambdan))
     do i=1,nwawel
         lambda=lambdamin+(i-1)*(lambdamax-lambdamin)/nwawel
-!        write(*,*) lambda
         lambdaf(i)=lambda
         kappafgas(i)=abscoeffgas(lambda)
         if (fs<1-struttol) then
