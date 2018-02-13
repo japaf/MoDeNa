@@ -701,7 +701,7 @@ class NonLinFitWithErrorContol(ParameterFittingStrategy):
         testIndices = set(
             choice(
                 model.nSamples,
-                size=max(1, self['testDataPercentage']*model.nSamples),
+                size=int(max(1, self['testDataPercentage']*model.nSamples)),
                 replace=False
             )
         )
