@@ -70,7 +70,7 @@ subroutine eqcond(regions)
         elseif (radiationModel == "simple") then
             call effcond
             regcond(i)=effc
-            regalpha(i,:)=4.09_dp*sqrt(1-por)/dcell
+            regalpha(i,:)=4.09_dp*sqrt(1-por)/dcell/por
             regsigma(i,:)=0
         elseif (radiationModel == "complex") then
             call foam_morpholgy
