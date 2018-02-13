@@ -32,6 +32,7 @@ subroutine eqcond(regions)
     integer :: i,j,fi
     real(dp), dimension(:), allocatable :: regbound,regcond
     real(dp), dimension(:,:), allocatable :: regalpha,regsigma
+    if (por < 0.8 .and. radiationModel == "complex") radiationModel = "simple"
     if (radiationModel == "none") then
         write(*,*) 'Radiation is neglected.'
         write(mfi,*) 'Radiation is neglected.'
