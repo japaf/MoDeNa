@@ -32,7 +32,9 @@ subroutine eqcond(regions)
     integer :: i,j,fi
     real(dp), dimension(:), allocatable :: regbound,regcond
     real(dp), dimension(:,:), allocatable :: regalpha,regsigma
-    if (por < 0.8 .and. radiationModel == "complex") radiationModel = "simple"
+    if (por < 0.8 .and. radiationModel == "complex") then
+        radiationModel = "simpleClosed"
+    endif
     if (radiationModel == "none") then
         write(*,*) 'Radiation is neglected.'
         write(mfi,*) 'Radiation is neglected.'
@@ -41,9 +43,17 @@ subroutine eqcond(regions)
         fbepbox=1
         effn=0 ! causes solution of incident radiation in conduction-radiation
         ! calculation to be 0, thus radiative heat flux will be also 0.
-    elseif (radiationModel == "simple") then
-        write(*,*) 'Using simple radiation model.'
-        write(mfi,*) 'Using simple radiation model.'
+    elseif (radiationModel == "simpleOpen") then
+        write(*,*) 'Using simple radiation model for open cell foams.'
+        write(mfi,*) 'Using simple radiation model for open cell foams.'
+        nbox=1
+        allocate(fbepbox(1))
+        fbepbox=1
+        effn=por*n1+(1-por)*unin !this is not perfect, use of some average value
+        ! of n2 instead of unin would be
+    elseif (radiationModel == "simpleClosed") then
+        write(*,*) 'Using simple radiation model for closed cell foams.'
+        write(mfi,*) 'Using simple radiation model for closed cell foams.'
         nbox=1
         allocate(fbepbox(1))
         fbepbox=1
@@ -67,10 +77,19 @@ subroutine eqcond(regions)
             regcond(i)=effc
             regalpha(i,:)=1
             regsigma(i,:)=0
-        elseif (radiationModel == "simple") then
+        elseif (radiationModel == "simpleOpen") then
             call effcond
             regcond(i)=effc
+            ! doi:10.1016/j.jqsrt.2007.05.007
+            ! divided by porosity to account also for low porosity cases
             regalpha(i,:)=4.09_dp*sqrt(1-por)/dcell/por
+            regsigma(i,:)=0
+        elseif (radiationModel == "simpleClosed") then
+            call effcond
+            regcond(i)=effc
+            ! doi:10.1179/014426005X50869
+            ! divided by porosity to account also for low porosity cases
+            regalpha(i,:)=2/dcell/por
             regsigma(i,:)=0
         elseif (radiationModel == "complex") then
             call foam_morpholgy

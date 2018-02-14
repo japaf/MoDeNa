@@ -11,7 +11,7 @@ The following key-pairs should be defined:
     - `progressTime`: determines spacing between outputs ["logarithmic","linear"]
     - `numberOfOutputs`: how many times should the intermediate results be written, used for linear progress of time
     - `outputsPerOrder`: how many times we save per decade if we have logarithmic progress of time
-    - `numberOfOrders`: for how many decades we save in logarithmic progress of time - used to determine total number of outputs, assumes starting time is 0 
+    - `numberOfOrders`: for how many decades we save in logarithmic progress of time - used to determine total number of outputs, assumes starting time is 0
     - `wallDiscretization`: number of finite volumes in each wall, used in heterogeneous model
     - `cellDiscretization`: number of finite volumes in each cell, used in heterogeneous model
     - `foamDiscretization`: number of finite volumes in foam, used in homogeneous model
@@ -47,7 +47,7 @@ The following key-pairs should be defined:
             - `{gasname}`: solubility model ["constant","modena"]
         - `solubility`:
             - `{gasname}`: solubility of gas, if "constant" model is used (g/g/bar)
-        - `diffusivityModel`: When "constant" is used, diffusivity in polymer must be given in the input file. When "modena" is used, surrogate Diffusivity model is used for given temperature of aging. When "foam" is used, diffusivity in foam (effective diffusivity) must be given in the input file. 
+        - `diffusivityModel`: When "constant" is used, diffusivity in polymer must be given in the input file. When "modena" is used, surrogate Diffusivity model is used for given temperature of aging. When "foam" is used, diffusivity in foam (effective diffusivity) must be given in the input file.
             - `{gasname}`: diffusivity model ["constant","modena","foam"]
         - `diffusivity`:
             - `{gasname}`: diffusivity of gas, if "constant" or "foam" model is used (m2/s)
@@ -91,7 +91,7 @@ The following key-pairs should be defined:
 - `numberOfGrayBoxes`: number of gray boxes for discretization of foam spectra, 10 is recommended
 - `numericalEffectiveConductivity`: use numerical instead of analytical model to calculate effective conductivity, false is recommended [true,false]
 - `structureName`: filename with foam morphology saved in VTK voxel format, if numerical model for effective conductivity is used
-- `testMode`: disable estimation of radiative properties, significantly decreases computational time, false is recommended [true,false]
+- `radiationModel`: none neglects radiation, simpleClosed and simpleOpen assume radiation only in gas phase in closed and open foams, respectively, and complex assumes partial absorption and reflection of radiation on walls and struts ["none","simpleClosed", "simpleOpen","complex"]
 
 ### Preparing init_foamConductivity.json
 - `T`: list of temperatures (K)
@@ -101,13 +101,13 @@ The following key-pairs should be defined:
 - `x[{gasname}]`: list of gas molar fractions, gases are defined in gasConductivity index set
 
 ### Preparing cell_gas.json
-- `temperature`: 
+- `temperature`:
     - `min`: minimum of temperature interval (K),
     - `max`: maximum of temperature interval (K),
     - `points`: number of points in temperature interval
-- `initial_weight_fraction`: 
+- `initial_weight_fraction`:
     `{gasname}`: initial weight fraction in foam recipe, blowing agents defined in gasConductivity index set and H2O are supported
-- `molar_mass`: 
+- `molar_mass`:
     `{gasname}`: molar mass for H2O and all used gases (kg/mol)
 - `polymer_density`: polymer density (kg/m3),
 - `foam_density`: foam density (kg/m3),
