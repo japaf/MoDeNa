@@ -3,6 +3,7 @@
 @author Pavel Ferkl
 """
 from __future__ import print_function
+import os
 import re
 import shutil
 import subprocess as sp
@@ -363,8 +364,7 @@ def move_to_box(infile, wfile, outfile, volumes):
     """
     Moves periodic closed foam to periodic box. Uses gmsh, specifically boolean
     operations and transformations from OpenCASCADE. The result is unrolled to
-    another geo file so that it can be quickly read and worked with in the
-    follow-up work. Operations are performed two times. First for walls (first
+    another geo file. Operations are performed two times. First for walls (first
     half of volumes) and then for cells.
     """
     with open(wfile, 'w') as wfl:
@@ -381,57 +381,8 @@ def move_to_box(infile, wfile, outfile, volumes):
         wfl.write('Block({0}) = {{ 1,-1,-1,1,3,3}};\n'.format(mvol + 8))
         wfl.write('Block({0}) = {{ 0,-1,-1,1,3,3}};\n'.format(mvol + 9))
         wfl.write('\n')
-        wfl.write(
-            'zol() = BooleanIntersection'
-            + '{{Volume{{1:{0}}};}}'.format(mvol / 2)
-            + '{{Volume{{{0}}};}};\n'.format(mvol + 1)
-        )
-        wfl.write(
-            'zoh() = BooleanIntersection'
-            + '{{Volume{{1:{0}}};}}'.format(mvol / 2)
-            + '{{Volume{{{0}}};}};\n'.format(mvol + 2)
-        )
-        wfl.write(
-            'zin() = BooleanIntersection'
-            + '{{Volume{{1:{0}}}; Delete;}}'.format(mvol / 2)
-            + '{{Volume{{{0}}};}};\n'.format(mvol + 3)
-        )
-        wfl.write('Translate{0,0, 1}{Volume{zol()};}\n')
-        wfl.write('Translate{0,0,-1}{Volume{zoh()};}\n\n')
-        wfl.write(
-            'yol() = BooleanIntersection'
-            + '{Volume{zol(),zoh(),zin()};}'
-            + '{{Volume{{{0}}};}};\n'.format(mvol + 4)
-        )
-        wfl.write(
-            'yoh() = BooleanIntersection'
-            + '{Volume{zol(),zoh(),zin()};}'
-            + '{{Volume{{{0}}};}};\n'.format(mvol + 5)
-        )
-        wfl.write(
-            'yin() = BooleanIntersection'
-            + '{Volume{zol(),zoh(),zin()}; Delete;}'
-            + '{{Volume{{{0}}};}};\n'.format(mvol + 6)
-        )
-        wfl.write('Translate{0, 1,0}{Volume{yol()};}\n')
-        wfl.write('Translate{0,-1,0}{Volume{yoh()};}\n\n')
-        wfl.write(
-            'xol() = BooleanIntersection'
-            + '{Volume{yol(),yoh(),yin()};}'
-            + '{{Volume{{{0}}};}};\n'.format(mvol + 7)
-        )
-        wfl.write(
-            'xoh() = BooleanIntersection'
-            + '{Volume{yol(),yoh(),yin()};}'
-            + '{{Volume{{{0}}};}};\n'.format(mvol + 8)
-        )
-        wfl.write(
-            'xin() = BooleanIntersection'
-            + '{Volume{yol(),yoh(),yin()}; Delete;}'
-            + '{{Volume{{{0}}};}};\n'.format(mvol + 9)
-        )
-        wfl.write('Translate{ 1,0,0}{Volume{xol()};}\n')
-        wfl.write('Translate{-1,0,0}{Volume{xoh()};}\n\n')
+        wfl.write('Recursive Delete{{Volume{{1:{0}}};}}\n'.format(mvol / 2))
+        wfl.write('\n')
         wfl.write(
             'zol2() = BooleanIntersection'
             + '{{Volume{{{0}:{1}}};}}'.format(mvol / 2 + 1, mvol)
@@ -483,12 +434,28 @@ def move_to_box(infile, wfile, outfile, volumes):
         )
         wfl.write('Translate{ 1,0,0}{Volume{xol2()};}\n')
         wfl.write('Translate{-1,0,0}{Volume{xoh2()};}\n\n')
-        wfl.write('Physical Volume ("walls") = {xol(),xoh(),xin()};\n')
         wfl.write('Physical Volume ("cells") = {xol2(),xoh2(),xin2()};\n\n')
     call = sp.Popen(['gmsh', wfile, '-0'])
     call.wait()
     shutil.move(wfile + '_unrolled', outfile)
-
+    sdat = read_geo(outfile)  # string data
+    edat = extract_data(sdat)  # extracted data
+    vols = edat['volume'].keys()
+    svols = ','.join('{}'.format(j) for i, j in enumerate(vols))
+    with open(wfile, 'w') as wfl:
+        wfl.write('SetFactory("OpenCASCADE");\n\n')
+        wfl.write('Include "{0}";\n\n'.format(outfile))
+        wfl.write('Block(1) = {0,0,0,1,1,1};\n')
+        wfl.write(
+            'out() = BooleanDifference'
+            + '{Volume{1}; Delete;}'
+            + '{{Volume{{{0}}};}};\n'.format(svols)
+        )
+        wfl.write('Physical Volume ("walls") = {out()};\n\n')
+    call = sp.Popen(['gmsh', wfile, '-0'])
+    call.wait()
+    shutil.move(wfile + '_unrolled', outfile)
+    os.remove(wfile)
 
 def create_walls(edat, wall_thickness=0.01):
     """Creates walls."""
