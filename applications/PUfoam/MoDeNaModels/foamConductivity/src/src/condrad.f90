@@ -31,28 +31,49 @@ contains
 !!
 !! It is a heat transfer in spatially one-dimensional domain.
 subroutine equcond
-    integer :: i,maxiter=20,fi
-    real(dp) :: tol=1e-5_dp,res
+    use ieee_arithmetic
+    integer :: i,j,maxiter=50,maxouteriter=5,fi
+    logical :: converged
+    real(dp) :: tol=1e-5_dp,res,alpha
     write(*,*) 'Conduction-Radiation:'
     write(mfi,*) 'Conduction-Radiation:'
     dz=dfoam/nz
     allocate(tmatrix(ldab,nz),gmatrix(ldab,nbox*nz),tipiv(nz),gipiv(nbox*nz),&
         trhs(nz),grhs(nbox*nz),tvec(nz),qcon(nz),qrad(nz),qtot(nz),gqrad(nz))
-    forall (i=1:nz)
-        tvec(i)=temp1+(i-1)*(temp2-temp1)/(nz-1) !initial temperature profile
-    end forall
     call make_tmatrix
     call dgbtrf(nz,nz,kl,ku,tmatrix,ldab,tipiv,info)
     call make_gmatrix
     call dgbtrf(nbox*nz,nbox*nz,kl,ku,gmatrix,ldab,gipiv,info)
-    do i=1,maxiter
-        call make_trhs
-        call dgbtrs(trans,nz,kl,ku,nrhs,tmatrix,ldab,tipiv,trhs,nz,info)
-        res=abs(maxval(trhs-tvec))
-        write(*,'(5x,A,1x,I2,A,1x,es9.3)') 'iteration:',i, ', residual:',res
-        write(mfi,'(5x,A,1x,I2,A,1x,es9.3)') 'iteration:',i, ', residual:',res
-        tvec=trhs
-        if (res<tol) exit
+    alpha=1
+    converged=.false.
+    do j=1,maxouteriter
+        forall (i=1:nz)
+            tvec(i)=temp1+(i-1)*(temp2-temp1)/(nz-1) !initialize temperature
+        end forall
+        do i=1,maxiter
+            call make_trhs
+            call dgbtrs(trans,nz,kl,ku,nrhs,tmatrix,ldab,tipiv,trhs,nz,info)
+            res=abs(maxval(trhs-tvec))
+            if (ieee_is_nan(res)) exit
+            write(*,'(5x,A,1x,I2,A,1x,es9.3)') 'iteration:',i, ', residual:',res
+            write(mfi,'(5x,A,1x,I2,A,1x,es9.3)') &
+                'iteration:',i, ', residual:',res
+            tvec=tvec+alpha*(trhs-tvec)
+            if (res<tol) then
+                converged=.true.
+                exit
+            endif
+        enddo
+        if (converged) then
+            exit
+        elseif (j==maxouteriter) then
+            stop 'DID NOT CONVERGE!!!'
+        else
+            alpha=alpha/2
+            write(*,'(5x,A,1x,es9.3)') &
+                'Could not converge. Restarting with relaxation parameter:',&
+                alpha
+        endif
     enddo
     call heatflux
     eqc=sum(qtot)/nz*dfoam/(temp1-temp2)

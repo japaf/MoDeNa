@@ -15,14 +15,15 @@ module tests
     private
     public loadParameters,eqcond,eqcond_por,eqcond_dcell,eqcond_strut,&
         eqcond_dfoam
-    character(len=99) :: fileplacein_par='./inputs/'   !modena
-    character(len=99) :: fileplacein_ref='../spectra/'  !modena
-    character(len=99) :: fileplaceout='./'  !modena
-    character(len=99) :: inputs='foamConductivity.json',spectra='spectra.out'
-    character(len=99) :: after_foaming,after_foaming0='after_foaming.txt'
-    character(len=99) :: bg_res='../../foamExpansion/results/bubbleGrowth/'
-    character(len=99) :: qmom0D_res='../../foamExpansion/results/CFD0D/'
-    character(len=99) :: qmom3D_res='../../foamExpansion/results/CFD3D/'
+    character(len=99) :: fileplacein_par
+    character(len=99) :: fileplacein_ref
+    character(len=99) :: spectra
+    character(len=99) :: fileplaceout
+    character(len=99) :: inputs
+    character(len=99) :: after_foaming, after_foaming0
+    character(len=99) :: bg_res
+    character(len=99) :: qmom0D_res
+    character(len=99) :: qmom3D_res
 contains
 !********************************BEGINNING*************************************
 !> Calculates equivalent conductivity for one specific foam.
@@ -39,7 +40,7 @@ subroutine eqcond(regions)
         write(*,*) 'Radiation is neglected.'
         write(mfi,*) 'Radiation is neglected.'
         nbox=1
-        allocate(fbepbox(1))
+        if (.not. allocated(fbepbox)) allocate(fbepbox(nbox))
         fbepbox=1
         effn=0 ! causes solution of incident radiation in conduction-radiation
         ! calculation to be 0, thus radiative heat flux will be also 0.
@@ -47,7 +48,7 @@ subroutine eqcond(regions)
         write(*,*) 'Using simple radiation model for open cell foams.'
         write(mfi,*) 'Using simple radiation model for open cell foams.'
         nbox=1
-        allocate(fbepbox(1))
+        if (.not. allocated(fbepbox)) allocate(fbepbox(nbox))
         fbepbox=1
         effn=por*n1+(1-por)*unin !this is not perfect, use of some average value
         ! of n2 instead of unin would be
@@ -55,7 +56,7 @@ subroutine eqcond(regions)
         write(*,*) 'Using simple radiation model for closed cell foams.'
         write(mfi,*) 'Using simple radiation model for closed cell foams.'
         nbox=1
-        allocate(fbepbox(1))
+        if (.not. allocated(fbepbox)) allocate(fbepbox(nbox))
         fbepbox=1
         effn=por*n1+(1-por)*unin !this is not perfect, use of some average value
         ! of n2 instead of unin would be better
@@ -113,7 +114,8 @@ subroutine eqcond(regions)
         sigma(i,:)=regsigma(j,:)
     enddo
     call equcond
-    deallocate(regbound,regcond,regalpha,regsigma,alpha,sigma,cond)
+    deallocate(regbound,regcond,regalpha,regsigma,alpha,sigma,cond,fbepbox)
+    deallocate(lambdan,nwl,lambdak,kwl,lambdagas,acgas)
 end subroutine eqcond
 !***********************************END****************************************
 
@@ -131,6 +133,7 @@ subroutine eqcond_por
     write(fi,*) 'porosity,foam_density,eq_cond,Ross_eq_cond,&
         kgas,ksol,krad'
     do i=1,npoints
+        call loadParameters
         por=pormin+(i-1)*dpor
         rhof=(1-por)*rhos
         call eqcond(1)
@@ -229,6 +232,15 @@ subroutine loadParameters
     character(len=99) :: kspec
     character(len=99) :: gasspec
     character(len=255), dimension(:), allocatable :: gasname
+    fileplacein_par='./inputs/'   !modena
+    fileplacein_ref='../spectra/'  !modena
+    fileplaceout='./'  !modena
+    inputs='foamConductivity.json'
+    spectra='spectra.out'
+    after_foaming0='after_foaming.txt'
+    bg_res='../../foamExpansion/results/bubbleGrowth/'
+    qmom0D_res='../../foamExpansion/results/CFD0D/'
+    qmom3D_res='../../foamExpansion/results/CFD3D/'
     call get_names(gasname)
     allocate(xgas(size(gasname)))
     inputs=TRIM(ADJUSTL(fileplacein_par))//TRIM(ADJUSTL(inputs))
@@ -236,7 +248,10 @@ subroutine loadParameters
     if (.not. file_exists) then
         inputs='../'//inputs !then try one folder up
         inquire(file=inputs,exist=file_exists)
-        if (.not. file_exists) stop 'input file not found'
+        if (.not. file_exists) then
+            print*, inputs
+            stop 'input file not found'
+        endif
     endif
     spectra=TRIM(ADJUSTL(fileplaceout))//TRIM(ADJUSTL(spectra))
     json_data => fson_parse(inputs)
