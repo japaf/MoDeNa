@@ -159,7 +159,7 @@ void modena_index_set_destroy(modena_index_set_t *self)
 {
     Py_XDECREF(self->pIndexSet);
 
-    self->ob_type->tp_free((PyObject*)self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static void modena_index_set_t_dealloc(modena_index_set_t* self)

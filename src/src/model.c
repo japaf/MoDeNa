@@ -708,7 +708,8 @@ void modena_model_destroy(modena_model_t *self)
 
     Py_XDECREF(self->pModel);
 
-    self->ob_type->tp_free((PyObject*)self);
+    // self->ob_type->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 /* C-Python: Destructor, exposed as __del__ in Python
@@ -720,7 +721,7 @@ static void modena_model_t_dealloc(modena_model_t* self)
 
 /* C-Python: Member-Table
  *
- * Structure which describes an attribute of a type which corresponds to a C 
+ * Structure which describes an attribute of a type which corresponds to a C
  * struct member. Its fields are:
  *
  * Field  C Type       Meaning
@@ -729,7 +730,7 @@ static void modena_model_t_dealloc(modena_model_t* self)
  * type   int         the type of the member in the C struct
  * offset Py_ssize_t  the offset in bytes that the member is located on the
  *                    type's object struct
- * flags  int         flag bits indicating if the field should be read-only or 
+ * flags  int         flag bits indicating if the field should be read-only or
  *                    writable
  * doc    char *      points to the contents of the docstring
  */
@@ -994,7 +995,7 @@ static int modena_model_t_init
         Py_INCREF(pModel);
         self->pModel = pModel;
     }
-    
+
     //PyObject_Print(self->pModel, stdout, 0);
     //printf("\n");
 
