@@ -13,6 +13,7 @@
         "visualize_tessellation": false
     },
     "relaxation": true,
+    "create_struts": true,
     "structured_grid": false,
     "structured_grid_options": {
         "render_box": false,
@@ -25,8 +26,8 @@
     "unstructured_grid": true,
     "unstructured_grid_options": {
         "create_geometry": true,
-        "convert_mesh": true,
         "wall_thickness": 0.05,
-        "mesh_domain": true
+        "mesh_domain": true,
+        "convert_mesh": false
     }
 }

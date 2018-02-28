@@ -339,10 +339,9 @@ def remove_duplicity(edat, eps=1e-10):
 
 def split_loops(edat, key):
     """
-    Makes sure that line and surface loops contain only one loop. Surfaces and
-    volumes with holes are instead defined in Surface and Volume entries,
-    respectively. Needed because gmsh unrolls geometry in a way, which is
-    unusable with OpenCASCADE kernel. Works when there is only one hole.
+    Surfaces and volumes with holes are instead defined in Surface and Volume
+    entries, respectively. Needed because gmsh unrolls geometry in a way, which
+    is unusable with OpenCASCADE kernel.
     """
     if key == 'line_loop':
         key2 = 'surface'
@@ -356,17 +355,17 @@ def split_loops(edat, key):
                 for value in item2:
                     item1.remove(value)
                 edat[key][i] = item1
-                edat[key2][i] = [i, j]
-                break
+                edat[key2][i].append(j)
 
 
-def move_to_box(infile, wfile, outfile, volumes):
+def move_to_box(infile, outfile, volumes):
     """
     Moves periodic closed foam to periodic box. Uses gmsh, specifically boolean
     operations and transformations from OpenCASCADE. The result is unrolled to
-    another geo file. Operations are performed two times. First for walls (first
-    half of volumes) and then for cells.
+    another geo file. First, walls are deleted and only cells are moved to
+    periodic box. Next, walls are defined based cells and box.
     """
+    wfile = "move_to_box.geo"
     with open(wfile, 'w') as wfl:
         mvol = max(volumes)
         wfl.write('SetFactory("OpenCASCADE");\n\n')
@@ -438,14 +437,16 @@ def move_to_box(infile, wfile, outfile, volumes):
     call = sp.Popen(['gmsh', wfile, '-0'])
     call.wait()
     shutil.move(wfile + '_unrolled', outfile)
-    sdat = read_geo(outfile)  # string data
-    edat = extract_data(sdat)  # extracted data
-    vols = edat['volume'].keys()
-    svols = ','.join('{}'.format(j) for i, j in enumerate(vols))
+    os.remove(wfile)
+    wfile = "define_walls.geo"
     with open(wfile, 'w') as wfl:
         wfl.write('SetFactory("OpenCASCADE");\n\n')
         wfl.write('Include "{0}";\n\n'.format(outfile))
         wfl.write('Block(1) = {0,0,0,1,1,1};\n')
+        sdat = read_geo(outfile)  # string data
+        edat = extract_data(sdat)  # extracted data
+        vols = edat['volume'].keys()
+        svols = ','.join('{}'.format(j) for i, j in enumerate(vols))
         wfl.write(
             'out() = BooleanDifference'
             + '{Volume{1}; Delete;}'
@@ -567,7 +568,7 @@ def main(fname, wall_thickness, verbose):
     save_geo(fname + "Walls.geo", sdat)
     # move foam to a periodic box and save it to a file
     move_to_box(
-        fname + "Walls.geo", "move_to_box.geo", fname + "WallsBox.geo",
+        fname + "Walls.geo", fname + "WallsBox.geo",
         range(1, len(sdat['volume']) + 1)
     )
     # read boxed foam

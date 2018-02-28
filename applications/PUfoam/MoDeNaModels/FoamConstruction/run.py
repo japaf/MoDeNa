@@ -346,6 +346,13 @@ def main():
             TERM.normal
         )
         relaxation.relax(INPUTS["filename"])
+    if INPUTS["create_struts"]:
+        print(
+            TERM.yellow +
+            "Creating struts." +
+            TERM.normal
+        )
+        relaxation.create_struts(INPUTS["filename"])
     if INPUTS["structured_grid"]:
         print(
             TERM.yellow +

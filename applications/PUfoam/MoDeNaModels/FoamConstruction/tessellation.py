@@ -11,6 +11,7 @@ Prepares representative volume element (RVE) of foam using Laguerre tessellation
 Uses Neper 3.
 """
 import os
+import shutil
 import math
 import numpy as np
 from geo_tools import read_geo, extract_data
@@ -72,3 +73,4 @@ def tessellate(filename, number_of_cells, visualize_tessellation):
                 point[pidx[0]][0], point[pidx[0]][1], point[pidx[0]][2]))
             flp.write('{0} {1} {2}\n\n\n'.format(
                 point[pidx[1]][0], point[pidx[1]][1], point[pidx[1]][2]))
+    shutil.copy(filename + '.geo', filename + 'Tessellated.geo')
