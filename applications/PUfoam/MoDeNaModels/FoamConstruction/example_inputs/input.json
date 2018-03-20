@@ -1,5 +1,6 @@
 {
     "filename": "Foam",
+    "working_directory": "results",
     "packing": true,
     "packing_options": {
         "shape": 0.195909940771,
@@ -8,12 +9,12 @@
         "scale": 0.216136876376,
         "algorithm": "-fba"
     },
-    "tessellation": true,
+    "tessellation": false,
     "tessellation_options": {
         "visualize_tessellation": false
     },
-    "relaxation": true,
-    "create_struts": true,
+    "relaxation": false,
+    "create_struts": false,
     "structured_grid": false,
     "structured_grid_options": {
         "render_box": false,
@@ -23,7 +24,7 @@
         "binarize_box": true,
         "move_to_periodic_box": true
     },
-    "unstructured_grid": true,
+    "unstructured_grid": false,
     "unstructured_grid_options": {
         "create_geometry": true,
         "wall_thickness": 0.05,

@@ -16,14 +16,15 @@ import time
 import random
 import subprocess
 import numpy as np
-from numpy import array, pi, linspace, exp, log, sqrt
+from numpy import array, pi, linspace
 from scipy.stats import lognorm
 import matplotlib.pyplot as plt
 import spack
 
 
 def simple_packing(shape, scale, number_of_cells):
-    "Simple and fast algorithm for packing"
+    """Simple and fast algorithm for packing. However, packing density is not
+    very large."""
     Rad = lognorm.rvs(shape, scale=scale, size=number_of_cells)
     print(Rad)
     Rad /= 2
@@ -85,7 +86,7 @@ def simple_packing(shape, scale, number_of_cells):
     return data
 
 
-def create_input(npart, domain=1.0):
+def create_input(wdir, npart, domain=1.0):
     """Create input file for packing program."""
     txt = """Particles count: {0}
 Packing size: {1} {1} {1}
@@ -97,17 +98,17 @@ Contraction rate: 1.328910e-005
 1. boundaries mode: 1 - bulk; 2 - ellipse (inscribed in XYZ box, Z is length of an ellipse); 3 - rectangle
 2. generationMode = 1 (Poisson, R) or 2 (Poisson in cells, S)
     """.format(npart, domain)
-    with open('generation.conf', 'w') as fout:
+    with open(os.path.join(wdir, 'generation.conf'), 'w') as fout:
         fout.write(txt)
 
 
-def make_csd(shape, scale, npart, show_plot=False):
+def make_csd(wdir, shape, scale, npart, show_plot=False):
     """Create cell size distribution and save it to file."""
     if shape == 0:
         rads = [scale + 0 * x for x in range(npart)]
     else:
         rads = lognorm.rvs(shape, scale=scale, size=npart)
-    with open('diameters.txt', 'w') as fout:
+    with open(os.path.join(wdir, 'diameters.txt'), 'w') as fout:
         for rad in rads:
             fout.write('{0}\n'.format(rad))
     if shape == 0:
@@ -117,22 +118,22 @@ def make_csd(shape, scale, npart, show_plot=False):
                         lognorm.ppf(0.99, shape, scale=scale), 100)
     plt.plot(xpos, lognorm.pdf(xpos, shape, scale=scale))
     plt.hist(rads, normed=True)
-    plt.savefig('packing_histogram.png')
-    plt.savefig('packing_histogram.pdf')
+    plt.savefig(os.path.join(wdir, 'packing_histogram.png'))
+    plt.savefig(os.path.join(wdir, 'packing_histogram.pdf'))
     if show_plot:
         plt.show()
 
 
-def read_results():
+def read_results(wdir):
     """Reads results of packing algorithm."""
-    with open("packing.nfo", "r") as fin:
+    with open(os.path.join(wdir, "packing.nfo"), "r") as fin:
         fin.readline()
         fin.readline()
         por_theory = float(fin.readline().split()[2])
         por_final = float(fin.readline().split()[2])
         print('Theoretical porosity:', por_theory)
         print('Final porosity:', por_final)
-    with open("packing.xyzd", "rb") as fin:
+    with open(os.path.join(wdir, "packing.xyzd"), "rb") as fin:
         btxt = fin.read()
         txt = list(struct.unpack("<" + "d" * (len(btxt) // 8), btxt))
         data = array(zip(*[iter(txt)] * 4))
@@ -141,7 +142,7 @@ def read_results():
     return data
 
 
-def render_packing(data, domain=1.0, pixels=1000):
+def render_packing(wdir, data, domain=1.0, pixels=1000):
     """Save picture of packed domain. Uses spack.
     https://pyspack.readthedocs.io/en/latest/"""
     pack = spack.Packing(data[:, 0:3], data[:, 3], L=domain)
@@ -149,22 +150,22 @@ def render_packing(data, domain=1.0, pixels=1000):
     scene = pack.scene(rot=pi / 4, camera_height=0.5,
                        camera_dist=2.5e1, angle=4, cmap='autumn',
                        floater_color=None)
-    scene.render('packing.png', width=pixels,
+    scene.render(os.path.join(wdir, 'packing.png'), width=pixels,
                  height=pixels, antialiasing=0.0001)
 
 
-def generate_structure(flag):
+def generate_structure(wdir, flag):
     """Runs the packing algorithm."""
-    if os.path.isfile("packing.nfo"):
-        os.remove(os.path.abspath("packing.nfo"))
-    proc = subprocess.Popen(['PackingGeneration.exe', flag])
+    if os.path.isfile(os.path.join(wdir, "packing.nfo")):
+        os.remove(os.path.abspath(os.path.join(wdir, "packing.nfo")))
+    proc = subprocess.Popen(['PackingGeneration.exe', flag], cwd=wdir)
     proc.wait()
-    if not os.path.isfile("packing.nfo"):
+    if not os.path.isfile(os.path.join(wdir, "packing.nfo")):
         print('Try to change number of particles or size distribution.')
         raise Exception('Packing algorithm failed.')
 
 
-def pack_spheres(shape, scale, number_of_cells, algorithm):
+def pack_spheres(wdir, shape, scale, number_of_cells, algorithm):
     """Packs spheres into a periodic domain. Creates Project01.rco with sphere
     centers and radii. Simple model is implemented directly, other algorithms
     use Vasili Baranov's code:
@@ -172,9 +173,9 @@ def pack_spheres(shape, scale, number_of_cells, algorithm):
     if algorithm == 'simple':
         data = simple_packing(shape, scale, number_of_cells)
     else:
-        create_input(number_of_cells)
-        make_csd(shape, scale, number_of_cells)
-        generate_structure(algorithm)
-        data = read_results()
-    np.savetxt('Project01.rco', data)
-    render_packing(data)
+        create_input(wdir, number_of_cells)
+        make_csd(wdir, shape, scale, number_of_cells)
+        generate_structure(wdir, algorithm)
+        data = read_results(wdir)
+    np.savetxt(os.path.join(wdir, 'Project01.rco'), data)
+    render_packing(wdir, data)

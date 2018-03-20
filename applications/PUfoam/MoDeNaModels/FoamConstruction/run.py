@@ -267,15 +267,15 @@ def binarize_box(filename, dx, dy, dz, porosity, strut_content):
         os.system("./foamreconstr/foamreconstr")
 
 
-def mesh_domain(domain):
+def mesh_domain(wdir, domain):
     """Mesh computational domain using Gmsh."""
-    call = sp.Popen(['gmsh', '-3', '-v', '3', domain])
+    call = sp.Popen(['gmsh', '-3', '-v', '3', domain], cwd=wdir)
     call.wait()
 
 
-def convert_mesh(input_mesh, output_mesh):
+def convert_mesh(wdir, input_mesh, output_mesh):
     """Convert mesh to xml using dolfin-convert."""
-    call = sp.Popen(['dolfin-convert', input_mesh, output_mesh])
+    call = sp.Popen(['dolfin-convert', input_mesh, output_mesh], cwd=wdir)
     call.wait()
 
 
@@ -299,17 +299,16 @@ def structured_grid(filename, dx, dy, dz, porosity, strut_content):
         binarize_box(filename, dx, dy, dz, porosity, strut_content)
 
 
-def unstructured_grid(filename, wall_thickness, verbose):
+def unstructured_grid(wdir, filename, wall_thickness, verbose):
     """Creates foam discretized on unstructured grid."""
     if INPUTS["unstructured_grid_options"]["create_geometry"]:
-        geo_tools.main(filename, wall_thickness, verbose)
-        shutil.copy(filename + "WallsBoxFixed.geo",
-                    filename + "_uns.geo")
+        geo_tools.main(wdir, filename, wall_thickness, verbose)
+        shutil.copy(os.path.join(wdir, filename + "WallsBoxFixed.geo"),
+                    os.path.join(wdir, filename + "_uns.geo"))
     if INPUTS["unstructured_grid_options"]["mesh_domain"]:
-        mesh_domain(filename + "_uns.geo")
+        mesh_domain(wdir, filename + "_uns.geo")
     if INPUTS["unstructured_grid_options"]["convert_mesh"]:
-        convert_mesh(filename + "_uns.msh",
-                     filename + "_uns.xml")
+        convert_mesh(wdir, filename + "_uns.msh", filename + "_uns.xml")
 
 
 def main():
@@ -325,6 +324,7 @@ def main():
             TERM.normal
         )
         packing.pack_spheres(
+            INPUTS["working_directory"],
             INPUTS["packing_options"]["shape"],
             INPUTS["packing_options"]["scale"],
             INPUTS["packing_options"]["number_of_cells"],
@@ -336,6 +336,7 @@ def main():
             TERM.normal
         )
         tessellation.tessellate(
+            INPUTS["working_directory"],
             INPUTS["filename"],
             INPUTS["packing_options"]["number_of_cells"],
             INPUTS["tessellation_options"]["visualize_tessellation"])
@@ -345,14 +346,15 @@ def main():
             "Relaxing foam structure." +
             TERM.normal
         )
-        relaxation.relax(INPUTS["filename"])
+        relaxation.relax(INPUTS["working_directory"], INPUTS["filename"])
     if INPUTS["create_struts"]:
         print(
             TERM.yellow +
             "Creating struts." +
             TERM.normal
         )
-        relaxation.create_struts(INPUTS["filename"])
+        relaxation.create_struts(
+            INPUTS["working_directory"], INPUTS["filename"])
     if INPUTS["structured_grid"]:
         print(
             TERM.yellow +
@@ -373,6 +375,7 @@ def main():
             TERM.normal
         )
         unstructured_grid(
+            INPUTS["working_directory"],
             INPUTS["filename"],
             INPUTS["unstructured_grid_options"]["wall_thickness"],
             ARGS['--verbose'])

@@ -358,7 +358,7 @@ def split_loops(edat, key):
                 edat[key2][i].append(j)
 
 
-def move_to_box(infile, outfile, volumes):
+def move_to_box(wdir, infile, outfile, volumes):
     """
     Moves periodic closed foam to periodic box. Uses gmsh, specifically boolean
     operations and transformations from OpenCASCADE. The result is unrolled to
@@ -366,7 +366,7 @@ def move_to_box(infile, outfile, volumes):
     periodic box. Next, walls are defined based cells and box.
     """
     wfile = "move_to_box.geo"
-    with open(wfile, 'w') as wfl:
+    with open(os.path.join(wdir, wfile), 'w') as wfl:
         mvol = max(volumes)
         wfl.write('SetFactory("OpenCASCADE");\n\n')
         wfl.write('Include "{0}";\n\n'.format(infile))
@@ -434,16 +434,17 @@ def move_to_box(infile, outfile, volumes):
         wfl.write('Translate{ 1,0,0}{Volume{xol2()};}\n')
         wfl.write('Translate{-1,0,0}{Volume{xoh2()};}\n\n')
         wfl.write('Physical Volume ("cells") = {xol2(),xoh2(),xin2()};\n\n')
-    call = sp.Popen(['gmsh', wfile, '-0'])
+    call = sp.Popen(['gmsh', wfile, '-0'], cwd=wdir)
     call.wait()
-    shutil.move(wfile + '_unrolled', outfile)
-    os.remove(wfile)
+    shutil.move(os.path.join(wdir, wfile + '_unrolled'),
+                os.path.join(wdir, outfile))
+    os.remove(os.path.join(wdir, wfile))
     wfile = "define_walls.geo"
-    with open(wfile, 'w') as wfl:
+    with open(os.path.join(wdir, wfile), 'w') as wfl:
         wfl.write('SetFactory("OpenCASCADE");\n\n')
         wfl.write('Include "{0}";\n\n'.format(outfile))
         wfl.write('Block(1) = {0,0,0,1,1,1};\n')
-        sdat = read_geo(outfile)  # string data
+        sdat = read_geo(os.path.join(wdir, outfile))  # string data
         edat = extract_data(sdat)  # extracted data
         vols = edat['volume'].keys()
         svols = ','.join('{}'.format(j) for i, j in enumerate(vols))
@@ -453,10 +454,11 @@ def move_to_box(infile, outfile, volumes):
             + '{{Volume{{{0}}};}};\n'.format(svols)
         )
         wfl.write('Physical Volume ("walls") = {out()};\n\n')
-    call = sp.Popen(['gmsh', wfile, '-0'])
+    call = sp.Popen(['gmsh', wfile, '-0'], cwd=wdir)
     call.wait()
-    shutil.move(wfile + '_unrolled', outfile)
-    os.remove(wfile)
+    shutil.move(os.path.join(wdir, wfile + '_unrolled'),
+                os.path.join(wdir, outfile))
+    os.remove(os.path.join(wdir, wfile))
 
 def create_walls(edat, wall_thickness=0.01):
     """Creates walls."""
@@ -542,7 +544,7 @@ def extract_center_cells(filename, number_of_cells):
     )
 
 
-def main(fname, wall_thickness, verbose):
+def main(wdir, fname, wall_thickness, verbose):
     """
     Main subroutine. Organizes workflow.
 
@@ -555,7 +557,7 @@ def main(fname, wall_thickness, verbose):
         + term.normal
     )
     # read Neper foam
-    sdat = read_geo(fname + ".geo")  # string data
+    sdat = read_geo(os.path.join(wdir, fname + ".geo"))  # string data
     # Neper creates physical surfaces, which we don't want
     sdat.pop('physical_surface')
     # remove orientation, OpenCASCADE compatibility
@@ -565,14 +567,14 @@ def main(fname, wall_thickness, verbose):
     edat = extract_data(sdat)
     create_walls(edat, wall_thickness)
     sdat = collect_strings(edat)
-    save_geo(fname + "Walls.geo", sdat)
+    save_geo(os.path.join(wdir, fname + "Walls.geo"), sdat)
     # move foam to a periodic box and save it to a file
     move_to_box(
-        fname + "Walls.geo", fname + "WallsBox.geo",
+        wdir, fname + "Walls.geo", fname + "WallsBox.geo",
         range(1, len(sdat['volume']) + 1)
     )
     # read boxed foam
-    sdat = read_geo(fname + "WallsBox.geo")  # string data
+    sdat = read_geo(os.path.join(wdir, fname + "WallsBox.geo"))  # string data
     edat = extract_data(sdat)  # extracted data
     # duplicity of points, lines, etc. was created during moving to a box
     remove_duplicity(edat)
@@ -612,7 +614,7 @@ def main(fname, wall_thickness, verbose):
         )
     # save the final foam
     sdat = collect_strings(edat)
-    save_geo(fname + "WallsBoxFixed.geo", sdat)
+    save_geo(os.path.join(wdir, fname + "WallsBoxFixed.geo"), sdat)
     print(
         term.yellow
         + "Prepared file {}WallsBoxFixed.geo.".format(fname)

@@ -10,63 +10,68 @@ Uses Ken Brakke's Surface Evolver to anneal foam structure and remove very small
 edges. The final morphology should be more representative of real foam
 structure.
 """
+import os
 import shutil
 import subprocess as sp
-from geo_tools import read_geo, extract_data, collect_strings, save_geo
-def relax(fname):
+def relax(wdir, fname):
     """Relax foam structure.
     Requires [se_api](https://github.com/kolarji2/SE_api) and
     [Evolver](http://facstaff.susqu.edu/brakke/evolver/evolver.html) to be
     installed."""
     wfile = 'relax.cmd'
-    shutil.copy(fname + 'Tessellated.geo', fname + '.geo')
-    call = sp.Popen(['se_api', '-i', fname + '.geo'])
+    call = sp.Popen(['se_api', '-i', fname + '.geo',
+                     '-o', fname + '.fe'], cwd=wdir)
     call.wait()
     cmd = """
-    read "se_cmd/foamface.cmd"
-    read "se_cmd/distribution.cmd"
-    read "se_cmd/wetfoam2.cmd"
-    read "se_cmd/fe2geo.cmd"
-    read "se_cmd/relaxNE4.cmd"
+    read "../se_cmd/foamface.cmd"
+    read "../se_cmd/distribution.cmd"
+    read "../se_cmd/wetfoam2.cmd"
+    read "../se_cmd/fe2geo.cmd"
+    read "../se_cmd/relaxNE4.cmd"
     connected
     gogo
     detorus
     geo >>> "{}.geo"
     q\nq
     """.format(fname)
-    with open(wfile, 'w') as wfl:
+    with open(os.path.join(wdir, wfile), 'w') as wfl:
         wfl.write(cmd)
-    call = sp.Popen(['evolver', '-f' + wfile, fname.lower() + '.fe'])
+    call = sp.Popen(['evolver', '-f' + wfile, fname + '.fe'], cwd=wdir,
+                    stdout=open(os.path.join(wdir, 'evolver.relax.log'), 'w'))
     call.wait()
-    shutil.copy(fname + '.geo', fname + 'Relaxed.geo')
+    shutil.copy(os.path.join(wdir, fname + '.geo'),
+                os.path.join(wdir, fname + 'Relaxed.geo'))
 
 
-def create_struts(fname):
+def create_struts(wdir, fname):
     """Create struts in dry foam."""
     wfile = 'struts.cmd'
-    call = sp.Popen(['se_api', '-i', fname + '.geo'])
+    call = sp.Popen(['se_api', '-i', fname + '.geo',
+                     '-o', fname + '.fe'], cwd=wdir)
     call.wait()
     cmd = """
-    read "se_cmd/wetfoam2.cmd"
+    read "../se_cmd/wetfoam2.cmd"
     spread := 0.2
     wetfoam >>> "{}Struts.fe"
     q\nq
     """.format(fname)
-    with open(wfile, 'w') as wfl:
+    with open(os.path.join(wdir, wfile), 'w') as wfl:
         wfl.write(cmd)
-    call = sp.Popen(['evolver', '-f' + wfile, fname.lower() + '.fe'])
+    call = sp.Popen(['evolver', '-f' + wfile, fname + '.fe'], cwd=wdir,
+                    stdout=open(os.path.join(wdir, 'evolver.wetfoam.log'), 'w'))
     call.wait()
     wfile = 'struts2.cmd'
     cmd = """
-    read "se_cmd/fe2geo.cmd"
+    read "../se_cmd/fe2geo.cmd"
     connected
     detorus
     geo >>> "{}.geo"
     q\nq
     """.format(fname)
-    with open(wfile, 'w') as wfl:
+    with open(os.path.join(wdir, wfile), 'w') as wfl:
         wfl.write(cmd)
-    call = sp.Popen(['evolver', '-f' + wfile, fname + 'Struts.fe'])
+    call = sp.Popen(['evolver', '-f' + wfile, fname + 'Struts.fe'], cwd=wdir,
+                    stdout=open(os.path.join(wdir, 'evolver.struts.log'), 'w'))
     call.wait()
     # wfile = "remove_surfaces.geo"
     # outfile = fname + '.geo'
@@ -84,4 +89,5 @@ def create_struts(fname):
     # call = sp.Popen(['gmsh', wfile, '-0'])
     # call.wait()
     # shutil.move(wfile + '_unrolled', outfile)
-    shutil.copy(fname + '.geo', fname + 'Struts.geo')
+    shutil.copy(os.path.join(wdir, fname + '.geo'),
+                os.path.join(wdir, fname + 'Struts.geo'))
