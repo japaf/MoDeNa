@@ -19,6 +19,7 @@ from blessings import Terminal
 from docopt import docopt
 from scipy import optimize
 from scipy.constants import gas_constant
+from vtkplotter.dolfin import plot
 XMIN = 0.0
 XMAX = 1.0
 YMIN = 0.0
@@ -41,13 +42,18 @@ def main():
     if INPUTS['saving']['mesh']:
         fe.File(fname + "_mesh.pvd") << mesh
     if INPUTS['plotting']['mesh']:
-        fe.plot(mesh, title='Mesh')
+        plot(mesh, text='mesh')
     subdomains = fe.MeshFunction(
         'size_t', mesh, fname + '_physical_region.xml')
     if INPUTS['saving']['subdomains']:
         fe.File(fname + "_subdomains.pvd") << subdomains
     if INPUTS['plotting']['subdomains']:
-        fe.plot(subdomains, title='Subdomains')
+        # fe.plot(subdomains, title='Subdomains')
+        fluid_mesh = fe.SubMesh(mesh, subdomains, 1)
+        solid_mesh = fe.SubMesh(mesh, subdomains, 2)
+        plot(fluid_mesh, text='subdomains', interactive=False)
+        plot(solid_mesh, text='subdomains',
+             c='tomato', add=True, interactive=True)
     # function space for temperature/concentration
     func_space = fe.FunctionSpace(
         mesh,
@@ -188,17 +194,15 @@ def main():
         fe.File(fname + "_flux_z.pvd") << flux_z
     # plot results
     if INPUTS['plotting']['solution']:
-        fe.plot(field, title="Solution")
+        plot(field, text='solution')
     if INPUTS['plotting']['flux']:
-        fe.plot(flux, title="Flux")
+        plot(flux, text='flux')
     if INPUTS['plotting']['flux_divergence']:
-        fe.plot(divergence, title="Divergence")
+        plot(divergence, text='divergence')
     if INPUTS['plotting']['flux_components']:
-        fe.plot(flux_x, title='x-component of flux (-kappa*grad(u))')
-        fe.plot(flux_y, title='y-component of flux (-kappa*grad(u))')
-        fe.plot(flux_z, title='z-component of flux (-kappa*grad(u))')
-    if True in INPUTS['plotting'].values():
-        plt.show()
+        plot(flux_x, text='x-component of flux', at=0, N=3)
+        plot(flux_y, text='y-component of flux', at=1)
+        plot(flux_z, text='z-component of flux', at=2)
     print(
         term.yellow
         + "End."
