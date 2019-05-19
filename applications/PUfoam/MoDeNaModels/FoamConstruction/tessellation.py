@@ -67,7 +67,7 @@ def tessellate(filename, number_of_cells, visualize_tessellation):
     point = edat["point"]
     line = edat["line"]
     with open('{0}.gnu'.format(filename), 'w') as flp:
-        for pidx in line.itervalues():
+        for pidx in line.values():
             flp.write('{0} {1} {2}\n'.format(
                 point[pidx[0]][0], point[pidx[0]][1], point[pidx[0]][2]))
             flp.write('{0} {1} {2}\n\n\n'.format(

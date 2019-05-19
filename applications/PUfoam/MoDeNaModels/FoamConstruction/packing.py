@@ -16,7 +16,7 @@ import time
 import random
 import subprocess
 import numpy as np
-from numpy import array, pi, linspace, exp, log, sqrt
+from numpy import array, pi, linspace, exp, log, sqrt, reshape
 from scipy.stats import lognorm
 import matplotlib.pyplot as plt
 import spack
@@ -135,7 +135,7 @@ def read_results():
     with open("packing.xyzd", "rb") as fin:
         btxt = fin.read()
         txt = list(struct.unpack("<" + "d" * (len(btxt) // 8), btxt))
-        data = array(zip(*[iter(txt)] * 4))
+        data = reshape(txt, (-1, 4))
     data[:, 3] = data[:, 3] * \
         ((1 - por_final) / (1 - por_theory))**(1 / 3)
     return data

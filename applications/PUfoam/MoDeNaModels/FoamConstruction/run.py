@@ -263,7 +263,7 @@ def binarize_box(filename, dx, dy, dz, porosity, strut_content):
 
 def mesh_domain(domain):
     """Mesh computational domain using Gmsh."""
-    call = sp.Popen(['gmsh', '-3', '-v', '3', domain])
+    call = sp.Popen(['gmsh', '-3', '-v', '3', '-format', 'msh2', domain])
     call.wait()
 
 

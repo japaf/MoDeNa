@@ -8,7 +8,6 @@ import shutil
 import subprocess as sp
 import numpy as np
 from blessings import Terminal
-from docopt import docopt
 NAMES = {
     'point': 'Point',
     'line': 'Line',
@@ -174,7 +173,7 @@ def collect_strings(edat):
                     )
                 )
         else:
-            for i, j in edat[key].iteritems():
+            for i, j in edat[key].items():
                 j = ','.join(str(e) for e in j)
                 sdat[key].append('{0} ({1}) = {{{2}}};'.format(
                     NAMES[key], i, j
@@ -185,15 +184,15 @@ def collect_strings(edat):
 def surfaces_in_plane(edat, coord, direction):
     """Finds surfaces that lie completely lie in a plane"""
     points_in_plane = []
-    for i, point in edat['point'].iteritems():
+    for i, point in edat['point'].items():
         if point[direction] == coord:
             points_in_plane.append(i)
     lines_in_plane = []
-    for i, line in edat['line'].iteritems():
+    for i, line in edat['line'].items():
         if line[0] in points_in_plane and line[1] in points_in_plane:
             lines_in_plane.append(i)
     line_loops_in_plane = []
-    for i, line_loop in edat['line_loop'].iteritems():
+    for i, line_loop in edat['line_loop'].items():
         log = True
         for line in line_loop:
             if line not in lines_in_plane:
@@ -210,7 +209,7 @@ def other_surfaces(edat, surf0, surf1):
     calling this function.
     """
     all_surfaces = []
-    for surface_loops in edat['volume'].itervalues():
+    for surface_loops in edat['volume'].values():
         for surface_loop in surface_loops:
             for surfaces in edat['surface_loop'][surface_loop]:
                 all_surfaces += edat['surface'][surfaces]
@@ -243,16 +242,16 @@ def periodic_surfaces(edat, surfaces, vec, eps=1e-8):
                 if point not in boundary_points:
                     boundary_points[point] = edat['point'][point]
     # sort point IDs so that you can compare later
-    for point in surface_points.itervalues():
+    for point in surface_points.values():
         point.sort()
     # dictionary with ID of periodic point for each point that has one
     periodic_points = dict()
-    for i, point in boundary_points.iteritems():
-        for j, secondpoint in boundary_points.iteritems():
+    for i, point in boundary_points.items():
+        for j, secondpoint in boundary_points.items():
             if np.sum(np.abs(point + vec - secondpoint)) < eps:
                 periodic_points[i] = j
     psurfs = []  # list of periodic surface pairs (IDs)
-    for i, surface in surface_points.iteritems():
+    for i, surface in surface_points.items():
         # Try to create surface using IDs of periodic points. Use None if there
         # is no periodic point in specified direction.
         per_surf = [
@@ -265,8 +264,8 @@ def periodic_surfaces(edat, surfaces, vec, eps=1e-8):
             psurfs.append(
                 [
                     i,
-                    surface_points.keys()[
-                        surface_points.values().index(per_surf)
+                    list(surface_points.keys())[
+                        list(surface_points.values()).index(per_surf)
                     ]
                 ]
             )
@@ -281,15 +280,15 @@ def identify_duplicity(edat, key, number, eps):
     """
     dupl = dict()
     if number == 'float':
-        for i, item1 in edat[key].iteritems():
-            for j, item2 in edat[key].iteritems():
+        for i, item1 in edat[key].items():
+            for j, item2 in edat[key].items():
                 if i != j and i > j and np.sum(np.abs(item1 - item2)) < eps:
                     if i not in dupl:
                         dupl[i] = []
                     dupl[i].append(j)
     elif number == 'integer':
-        for i, item1 in edat[key].iteritems():
-            for j, item2 in edat[key].iteritems():
+        for i, item1 in edat[key].items():
+            for j, item2 in edat[key].items():
                 if i != j and i > j and sorted(item1) == sorted(item2):
                     if i not in dupl:
                         dupl[i] = []
@@ -307,7 +306,7 @@ def remove_duplicit_ids_from_keys(edat, dupl, key):
 
 def remove_duplicit_ids_from_values(edat, dupl, key):
     """Removes duplicit IDs from values of entities."""
-    for values in edat[key].itervalues():
+    for values in edat[key].values():
         for j, value in enumerate(values):
             if value in dupl:
                 values[j] = min(dupl[value])
@@ -347,8 +346,8 @@ def split_loops(edat, key):
         key2 = 'volume'
     else:
         raise Exception('can be called only for line_loop or surface_loop')
-    for i, item1 in edat[key].iteritems():
-        for j, item2 in edat[key].iteritems():
+    for i, item1 in edat[key].items():
+        for j, item2 in edat[key].items():
             if i != j and set(item2).issubset((set(item1))):
                 for value in item2:
                     item1.remove(value)
@@ -510,7 +509,7 @@ def create_walls(edat, wall_thickness=0.01):
     nlines = len(edat['line'])
     nsurfaces = len(edat['line_loop'])
     nvolumes = len(edat['surface_loop'])
-    for volume in edat['surface_loop'].keys():
+    for volume in list(edat['surface_loop']):
         point_map = dict()  # mapping of old points to new points
         nvolumes += 1
         edat['surface_loop'][nvolumes] = []
