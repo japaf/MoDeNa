@@ -13,6 +13,7 @@ Options:
 """
 from __future__ import print_function
 import json
+import matplotlib.pyplot as plt
 import fenics as fe
 from blessings import Terminal
 from docopt import docopt
@@ -86,8 +87,7 @@ def main():
         mat_prop = SubdomainConstant(
             subdomains,
             fe.Constant(INPUTS['diffusivity']['gas']),
-            fe.Constant(INPUTS['diffusivity']['solid']) *
-            fe.Constant(INPUTS['solubility'] *
+            fe.Constant(INPUTS['diffusivity']['solid'] * INPUTS['solubility'] *
                         gas_constant * INPUTS['temperature']),
             degree=0
         )
@@ -122,7 +122,7 @@ def main():
             INPUTS['temperature'], INPUTS['morphology']['enhancement_par'])
         print('Analytical model: {0} m^2/s'.format(eff_prop))
     # create system matrix
-    system_matrix = -mat_prop * \
+    system_matrix = - mat_prop * \
         fe.inner(fe.grad(field), fe.grad(test_func)) * fe.dx
     left_side, right_side = fe.lhs(system_matrix), fe.rhs(system_matrix)
     # define boundary conditions
@@ -198,7 +198,7 @@ def main():
         fe.plot(flux_y, title='y-component of flux (-kappa*grad(u))')
         fe.plot(flux_z, title='z-component of flux (-kappa*grad(u))')
     if True in INPUTS['plotting'].values():
-        fe.interactive()
+        plt.show()
     print(
         term.yellow
         + "End."
@@ -251,7 +251,7 @@ class PeriodicDomain(fe.SubDomain):
             pos_b[2] = -1000
 
 
-class SubdomainConstant(fe.Expression):
+class SubdomainConstant(fe.UserExpression):
     """
     Defines constant on computational domain respecting the subdomains. Maybe it
     should be rewritten as C++ code (see
@@ -260,6 +260,7 @@ class SubdomainConstant(fe.Expression):
 
     def __init__(self, subdomains, k_0, k_1, **kwargs):
         """Constructor."""
+        super().__init__(**kwargs)
         self.subdomains = subdomains
         self.k_0 = k_0
         self.k_1 = k_1
@@ -272,6 +273,10 @@ class SubdomainConstant(fe.Expression):
             values[0] = self.k_0
         else:
             values[0] = self.k_1
+
+    def value_shape(self):
+        """Define value_shape to suppress warnings."""
+        return ()
 
 
 def analytical_conductivity(k_gas, k_sol, por, f_strut):
