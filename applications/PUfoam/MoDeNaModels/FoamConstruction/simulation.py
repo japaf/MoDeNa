@@ -13,7 +13,6 @@ Options:
 """
 from __future__ import print_function
 import json
-import matplotlib.pyplot as plt
 import fenics as fe
 from blessings import Terminal
 from docopt import docopt
@@ -107,8 +106,8 @@ def main():
     # define structure of foam over whole domain
     structure = fe.project(unit_function * gas_content, dis_func_space)
     # calculate porosity and wall thickness
-    porosity = fe.assemble(structure *
-                           fe.dx) / ((XMAX - XMIN) * (YMAX - YMIN) * (ZMAX - ZMIN))
+    porosity = (fe.assemble(structure * fe.dx) /
+                ((XMAX - XMIN) * (YMAX - YMIN) * (ZMAX - ZMIN)))
     print('Porosity: {0}'.format(porosity))
     dwall = wall_thickness(
         porosity, INPUTS['morphology']['cell_size'],
@@ -144,12 +143,18 @@ def main():
     # output temperature/concentration at the boundaries
     if ARGS['--verbose']:
         print('Checking periodicity:')
-        print('Value at XMIN:', field(XMIN, (YMIN + YMAX) / 3, (ZMIN + ZMAX) / 3))
-        print('Value at XMAX:', field(XMAX, (YMIN + YMAX) / 3, (ZMIN + ZMAX) / 3))
-        print('Value at YMIN:', field((XMIN + XMAX) / 3, YMIN, (ZMIN + ZMAX) / 3))
-        print('Value at YMAX:', field((XMIN + XMAX) / 3, YMAX, (ZMIN + ZMAX) / 3))
-        print('Value at ZMIN:', field((XMIN + XMAX) / 3, (YMIN + YMAX) / 3, ZMIN))
-        print('Value at ZMAX:', field((XMIN + XMAX) / 3, (YMIN + YMAX) / 3, ZMAX))
+        print('Value at XMIN:', field(XMIN, (YMIN + YMAX) / 3,
+                                      (ZMIN + ZMAX) / 3))
+        print('Value at XMAX:', field(XMAX, (YMIN + YMAX) / 3,
+                                      (ZMIN + ZMAX) / 3))
+        print('Value at YMIN:', field((XMIN + XMAX) / 3, YMIN,
+                                      (ZMIN + ZMAX) / 3))
+        print('Value at YMAX:', field((XMIN + XMAX) / 3, YMAX,
+                                      (ZMIN + ZMAX) / 3))
+        print('Value at ZMIN:', field((XMIN + XMAX) / 3,
+                                      (YMIN + YMAX) / 3, ZMIN))
+        print('Value at ZMAX:', field((XMIN + XMAX) / 3,
+                                      (YMIN + YMAX) / 3, ZMAX))
     # calculate flux, and effective properties
     vec_func_space = fe.VectorFunctionSpace(
         mesh,
@@ -336,9 +341,9 @@ def wall_thickness_root2(x, *args):
     fstrut = args[2]
     vcell = 0.349 * dcell**3
     vstruts = 2.805 * dstrut**2 * dcell
-    vwalls = (1.317 * dcell**2 - 13.4284 * dstrut *
-              dcell + 34.2375 * dstrut**2) * dwall + (4.639 * dcell
-                                                      - 17.976 * dstrut) * dwall**2
+    vwalls = ((1.317 * dcell**2 - 13.4284 * dstrut *
+               dcell + 34.2375 * dstrut**2) * dwall +
+              (4.639 * dcell - 17.976 * dstrut) * dwall**2)
     return [vstruts / (vstruts + vwalls) - fstrut,
             vwalls + vstruts - (1 - por) * vcell]
 
