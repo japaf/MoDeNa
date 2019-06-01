@@ -104,7 +104,7 @@ def fix_strings(strings):
 
 
 def save_geo(geo_file, sdat, edat, opencascade=True, char_length=0.1, psize=0.1,
-             csize=0.1):
+             csize=0.1, esize=0.1):
     """
     Creates geometry input file for gmsh. Input is a dictionary with prepared
     string lines.
@@ -117,6 +117,7 @@ def save_geo(geo_file, sdat, edat, opencascade=True, char_length=0.1, psize=0.1,
             )
             text_file.write('psize = {0};\n'.format(psize))
             text_file.write('csize = {0};\n'.format(csize))
+            text_file.write('esize = {0};\n'.format(esize))
         for key in NAME_LIST:
             if key in sdat:
                 for line in sdat[key]:
@@ -131,7 +132,19 @@ def save_geo(geo_file, sdat, edat, opencascade=True, char_length=0.1, psize=0.1,
             text_file.write('Field[2].LcMax = csize;\n')
             text_file.write('Field[2].DistMin = 0;\n')
             text_file.write('Field[2].DistMax = 3*csize;\n')
-            text_file.write('Background Field = 2;\n')
+            edges = r'{' + ','.join(str(x) for x in edat['line'].keys()) + r'}'
+            text_file.write('Field[3] = Distance;\n')
+            text_file.write('Field[3].NNodesByEdge = 10;\n')
+            text_file.write('Field[3].EdgesList = {};\n'.format(edges))
+            text_file.write('Field[4] = Threshold;\n')
+            text_file.write('Field[4].IField = 2;\n')
+            text_file.write('Field[4].LcMin = psize;\n')
+            text_file.write('Field[4].LcMax = esize;\n')
+            text_file.write('Field[4].DistMin = 0;\n')
+            text_file.write('Field[4].DistMax = 3*esize;\n')
+            text_file.write('Field[5] = Min;\n')
+            text_file.write(r'Field[5].FieldsList = {2, 4};' + '\n')
+            text_file.write('Background Field = 5;\n')
             text_file.write(
                 'Mesh.CharacteristicLengthExtendFromBoundary = 0;\n')
 
@@ -583,6 +596,7 @@ def extract_center_cells(filename, number_of_cells):
     save_geo(
         "{0}.geo".format(filename),
         sdat,
+        edat,
         opencascade=False
     )
 
@@ -593,7 +607,7 @@ def restore_sizing(edat):
         edat['point'][ind] = list(edat['point'][ind]) + ['psize']
 
 
-def main(fname, wall_thickness, verbose):
+def main(fname, wall_thickness, sizing, verbose):
     """
     Main subroutine. Organizes workflow.
 
@@ -605,24 +619,24 @@ def main(fname, wall_thickness, verbose):
         + "Working on file {}.geo.".format(fname)
         + term.normal
     )
-    # # read Neper foam
-    # sdat = read_geo(fname + ".geo")  # string data
-    # # Neper creates physical surfaces, which we don't want
-    # sdat.pop('physical_surface')
-    # # remove orientation, OpenCASCADE compatibility
-    # fix_strings(sdat['line_loop'])
-    # fix_strings(sdat['surface_loop'])
-    # # create walls
-    # edat = extract_data(sdat)
-    # create_walls(edat, wall_thickness)
-    # sdat = collect_strings(edat)
-    # save_geo(fname + "Walls.geo", sdat)
-    # # move foam to a periodic box and save it to a file
-    # move_to_box(
-    #     fname + "Walls.geo", "move_to_box.geo", fname + "WallsBox.geo",
-    #     range(1, len(sdat['volume']) + 1)
-    # )
-    # # read boxed foam
+    # read Neper foam
+    sdat = read_geo(fname + ".geo")  # string data
+    # Neper creates physical surfaces, which we don't want
+    sdat.pop('physical_surface')
+    # remove orientation, OpenCASCADE compatibility
+    fix_strings(sdat['line_loop'])
+    fix_strings(sdat['surface_loop'])
+    # create walls
+    edat = extract_data(sdat)
+    create_walls(edat, wall_thickness)
+    sdat = collect_strings(edat)
+    save_geo(fname + "Walls.geo", sdat)
+    # move foam to a periodic box and save it to a file
+    move_to_box(
+        fname + "Walls.geo", "move_to_box.geo", fname + "WallsBox.geo",
+        range(1, len(sdat['volume']) + 1)
+    )
+    # read boxed foam
     sdat = read_geo(fname + "WallsBox.geo")  # string data
     edat = extract_data(sdat)  # extracted data
     # duplicity of points, lines, etc. was created during moving to a box
@@ -662,7 +676,8 @@ def main(fname, wall_thickness, verbose):
     restore_sizing(edat)
     # save the final foam
     sdat = collect_strings(edat)
-    save_geo(fname + "WallsBoxFixed.geo", sdat, edat, psize=0.05, csize=0.1)
+    save_geo(fname + "WallsBoxFixed.geo", sdat,
+             edat, psize=sizing[0], esize=sizing[1], csize=sizing[2])
     print(
         term.yellow
         + "Prepared file {}WallsBoxFixed.geo.".format(fname)
