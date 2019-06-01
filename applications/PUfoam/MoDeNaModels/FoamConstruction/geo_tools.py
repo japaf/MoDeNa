@@ -103,7 +103,7 @@ def fix_strings(strings):
         strings[i] = re.sub('[-]', '', line)
 
 
-def save_geo(geo_file, sdat, opencascade=True, char_length=0.1, psize=0.1,
+def save_geo(geo_file, sdat, edat, opencascade=True, char_length=0.1, psize=0.1,
              csize=0.1):
     """
     Creates geometry input file for gmsh. Input is a dictionary with prepared
@@ -121,6 +121,19 @@ def save_geo(geo_file, sdat, opencascade=True, char_length=0.1, psize=0.1,
             if key in sdat:
                 for line in sdat[key]:
                     text_file.write("{}\n".format(line))
+        if opencascade:
+            text_file.write(r'p1() = PointsOf {Physical Volume {1};};' + '\n')
+            text_file.write('Field[1] = Distance;\n')
+            text_file.write(r'Field[1].NodesList = {p1()};' + '\n')
+            text_file.write('Field[2] = Threshold;\n')
+            text_file.write('Field[2].IField = 1;\n')
+            text_file.write('Field[2].LcMin = psize;\n')
+            text_file.write('Field[2].LcMax = csize;\n')
+            text_file.write('Field[2].DistMin = 0;\n')
+            text_file.write('Field[2].DistMax = 3*csize;\n')
+            text_file.write('Background Field = 2;\n')
+            text_file.write(
+                'Mesh.CharacteristicLengthExtendFromBoundary = 0;\n')
 
 
 def extract_data(sdat):
@@ -580,15 +593,6 @@ def restore_sizing(edat):
         edat['point'][ind] = list(edat['point'][ind]) + ['psize']
 
 
-def add_center_points(edat, fname):
-    """Append cell centers to point dictionary."""
-    x, y, z = np.loadtxt(fname, unpack=True)
-    ind = sorted(edat['point'].keys())[-1]
-    for i, _ in enumerate(x):
-        ind += 1
-        edat['point'][ind] = [x[i], y[i], z[i], 'csize']
-
-
 def main(fname, wall_thickness, verbose):
     """
     Main subroutine. Organizes workflow.
@@ -656,10 +660,9 @@ def main(fname, wall_thickness, verbose):
             'surface IDs periodic in Y: {}'.format(edat['periodic_surface_Y'])
         )
     restore_sizing(edat)
-    add_center_points(edat, 'centers.txt')
     # save the final foam
     sdat = collect_strings(edat)
-    save_geo(fname + "WallsBoxFixed.geo", sdat, psize=0.05)
+    save_geo(fname + "WallsBoxFixed.geo", sdat, edat, psize=0.05, csize=0.1)
     print(
         term.yellow
         + "Prepared file {}WallsBoxFixed.geo.".format(fname)
