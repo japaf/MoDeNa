@@ -103,7 +103,8 @@ def fix_strings(strings):
         strings[i] = re.sub('[-]', '', line)
 
 
-def save_geo(geo_file, sdat, opencascade=True, char_length=0.1):
+def save_geo(geo_file, sdat, opencascade=True, char_length=0.1, psize=0.1,
+             csize=0.1):
     """
     Creates geometry input file for gmsh. Input is a dictionary with prepared
     string lines.
@@ -114,6 +115,8 @@ def save_geo(geo_file, sdat, opencascade=True, char_length=0.1):
             text_file.write(
                 'Mesh.CharacteristicLengthMax = {0};\n'.format(char_length)
             )
+            text_file.write('psize = {0};\n'.format(psize))
+            text_file.write('csize = {0};\n'.format(csize))
         for key in NAME_LIST:
             if key in sdat:
                 for line in sdat[key]:
@@ -571,6 +574,21 @@ def extract_center_cells(filename, number_of_cells):
     )
 
 
+def restore_sizing(edat):
+    """Add sizing info to all points."""
+    for ind in edat['point'].keys():
+        edat['point'][ind] = list(edat['point'][ind]) + ['psize']
+
+
+def add_center_points(edat, fname):
+    """Append cell centers to point dictionary."""
+    x, y, z = np.loadtxt(fname, unpack=True)
+    ind = sorted(edat['point'].keys())[-1]
+    for i, _ in enumerate(x):
+        ind += 1
+        edat['point'][ind] = [x[i], y[i], z[i], 'csize']
+
+
 def main(fname, wall_thickness, verbose):
     """
     Main subroutine. Organizes workflow.
@@ -583,24 +601,24 @@ def main(fname, wall_thickness, verbose):
         + "Working on file {}.geo.".format(fname)
         + term.normal
     )
-    # read Neper foam
-    sdat = read_geo(fname + ".geo")  # string data
-    # Neper creates physical surfaces, which we don't want
-    sdat.pop('physical_surface')
-    # remove orientation, OpenCASCADE compatibility
-    fix_strings(sdat['line_loop'])
-    fix_strings(sdat['surface_loop'])
-    # create walls
-    edat = extract_data(sdat)
-    create_walls(edat, wall_thickness)
-    sdat = collect_strings(edat)
-    save_geo(fname + "Walls.geo", sdat)
-    # move foam to a periodic box and save it to a file
-    move_to_box(
-        fname + "Walls.geo", "move_to_box.geo", fname + "WallsBox.geo",
-        range(1, len(sdat['volume']) + 1)
-    )
-    # read boxed foam
+    # # read Neper foam
+    # sdat = read_geo(fname + ".geo")  # string data
+    # # Neper creates physical surfaces, which we don't want
+    # sdat.pop('physical_surface')
+    # # remove orientation, OpenCASCADE compatibility
+    # fix_strings(sdat['line_loop'])
+    # fix_strings(sdat['surface_loop'])
+    # # create walls
+    # edat = extract_data(sdat)
+    # create_walls(edat, wall_thickness)
+    # sdat = collect_strings(edat)
+    # save_geo(fname + "Walls.geo", sdat)
+    # # move foam to a periodic box and save it to a file
+    # move_to_box(
+    #     fname + "Walls.geo", "move_to_box.geo", fname + "WallsBox.geo",
+    #     range(1, len(sdat['volume']) + 1)
+    # )
+    # # read boxed foam
     sdat = read_geo(fname + "WallsBox.geo")  # string data
     edat = extract_data(sdat)  # extracted data
     # duplicity of points, lines, etc. was created during moving to a box
@@ -618,11 +636,9 @@ def main(fname, wall_thickness, verbose):
     surf = other_surfaces(edat, surf0, surf1)
     if verbose:
         print('other boundary surface IDs: {}'.format(surf))
-    """
-    Physical surfaces create problems in mesh conversion step. Bug in gmsh?
-    Boundaries will be defined in fenics/dolfin directly.
-    TODO: fix this
-    """
+    # Physical surfaces create problems in mesh conversion step. Bug in gmsh?
+    # Boundaries will be defined in fenics/dolfin directly.
+    # TODO: fix this
     # edat['physical_surface'] = {1:surf0, 2:surf1, 3:surf}
     # identification of periodic surfaces for periodic mesh creation
     edat['periodic_surface_X'] = periodic_surfaces(
@@ -639,9 +655,11 @@ def main(fname, wall_thickness, verbose):
         print(
             'surface IDs periodic in Y: {}'.format(edat['periodic_surface_Y'])
         )
+    restore_sizing(edat)
+    add_center_points(edat, 'centers.txt')
     # save the final foam
     sdat = collect_strings(edat)
-    save_geo(fname + "WallsBoxFixed.geo", sdat)
+    save_geo(fname + "WallsBoxFixed.geo", sdat, psize=0.05)
     print(
         term.yellow
         + "Prepared file {}WallsBoxFixed.geo.".format(fname)
