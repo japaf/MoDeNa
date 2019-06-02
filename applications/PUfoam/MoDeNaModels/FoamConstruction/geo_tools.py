@@ -630,7 +630,7 @@ def main(fname, wall_thickness, sizing, verbose):
     edat = extract_data(sdat)
     create_walls(edat, wall_thickness)
     sdat = collect_strings(edat)
-    save_geo(fname + "Walls.geo", sdat)
+    save_geo(fname + "Walls.geo", sdat, edat)
     # move foam to a periodic box and save it to a file
     move_to_box(
         fname + "Walls.geo", "move_to_box.geo", fname + "WallsBox.geo",
